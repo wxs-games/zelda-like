@@ -10,3 +10,12 @@ MemoryCaptures/
 *.csproj
 *.sln
 .DS_Store
+Thumbs.db
+
+# Build output
+[Bb]uild/
+[Bb]uilds/
+
+# IDE local cache
+.codegraph/
+.merkle-snapshot.json
