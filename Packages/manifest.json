@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.coplaydev.unity-mcp": "file:E:/desktop/UnityXiangMu/unity-mcp-10.2.0/unity-mcp-10.2.0/MCPForUnity",
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.2.0",
     "com.unity.cinemachine": "2.10.3",
     "com.unity.cloud.gltfast": "6.12.1",
     "com.unity.collab-proxy": "2.5.2",
