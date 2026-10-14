@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02509613922165f40b3de5a5351ee817, type: 3}
+  m_Name: BowItem
+  m_EditorClassIdentifier: 
+  id: bow
+  itemName: "\u730E\u4EBA\u77ED\u5F13"
+  itemDescription: "\u4E00\u628A\u8F7B\u4FBF\u7684\u77ED\u5F13\uFF0C\u53EF\u5411\u6307\u5B9A\u65B9\u5411\u5C04\u51FA\u7BAD\u77E2\u8FDB\u884C\u8FDC\u7A0B\u653B\u51FB\u3002\u88C5\u5907\u540E\u89E3\u9501\u5F13\u7BAD\u5C04\u51FB\u80FD\u529B\uFF0C\u7528\u4E8E\u5BF9\u4ED8\u96BE\u4EE5\u63A5\u8FD1\u7684\u654C\u4EBA\u4E0E\u8FDC\u7A0B\u89E6\u53D1\u673A\u5173\u3002"
+  icon: {fileID: 21300000, guid: 7aba4aafb9a9a2d4bad39b2bb9dd5d45, type: 3}
+  isGold: 0
+  stackSize: 1
+  currentHealth: 0
+  maxHealth: 0
+  speed: 0
+  damage: 0
+  duration: 0
+  unlocksAbility: 2
+  worldFrames:
+  - {fileID: 7844743512669529135, guid: 222169447c850cf4a8e902f47e29ba29, type: 3}
+  - {fileID: -512617707331603574, guid: 222169447c850cf4a8e902f47e29ba29, type: 3}
+  - {fileID: 3171907385572700989, guid: 222169447c850cf4a8e902f47e29ba29, type: 3}
+  - {fileID: 6024301410057112577, guid: 222169447c850cf4a8e902f47e29ba29, type: 3}
+  worldFrameRate: 7

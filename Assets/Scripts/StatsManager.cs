@@ -24,6 +24,12 @@ public class StatsManager : MonoBehaviour
     public float enemyCurrentHealth;
     public float playerMaxHealth;
     public float playerCurrentHealth;
+
+    [Header("Unlocked Abilities")]
+    [Tooltip("能力解锁是永久的，区别于 ItemEffectApplier 里的 duration 临时 buff")]
+    public bool hasSword = false;
+    public bool hasBow = false;
+
     private void Awake()
     {
         if (Instance == null)

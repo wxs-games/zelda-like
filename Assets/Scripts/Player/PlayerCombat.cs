@@ -41,13 +41,13 @@ public class PlayerCombat : MonoBehaviour
 
     public void DealDamage()
     {
-        StatsManager.Instance.playerDamage += 1;
-        statsUI.UpdateDamage();
+        // 攻击力只由基础值 + 技能树强化决定，不再随攻击次数累加
+        int damage = StatsManager.Instance.playerDamage;
 
         Collider2D[] enemies = Physics2D.OverlapCircleAll(attackPoint.position, StatsManager.Instance.playerweaponRange, enemyLayer);
         if (enemies.Length > 0)
         {
-            enemies[0].GetComponent<EnemyHealth>().ChangeHealth(-StatsManager.Instance.playerDamage);
+            enemies[0].GetComponent<EnemyHealth>().ChangeHealth(-damage);
             enemies[0].GetComponent<EnemyKnockbackable>().Knockback(transform, StatsManager.Instance.playerKnockbackForce, StatsManager.Instance.playerKnockbackStun);
         }
     }

@@ -10,7 +10,7 @@ public class PlayerMoveState : IPlayerState
 
     public void OnUpdate(PlayerController p)
     {
-        if (Input.GetButtonDown("Slash") && p.playerCombat.CanAttack())
+        if (Input.GetButtonDown("Slash") && p.playerCombat.enabled && p.playerCombat.CanAttack())
         {
             p.ChangeState(PlayerAttackState.Instance);
             return;

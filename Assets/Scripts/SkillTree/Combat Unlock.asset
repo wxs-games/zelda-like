@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c06b94ff67cacae48a5d5ee5de97867f, type: 3}
-  m_Name: Combat Unlock
+  m_Name: Sword Damage+
   m_EditorClassIdentifier: 
-  skillName: Sword Slash
-  maxLevel: 1
+  skillName: Sword Damage+
+  maxLevel: 3
   skillIcon: {fileID: 21300000, guid: 441cab0c118da2447b5d978ececaa378, type: 3}

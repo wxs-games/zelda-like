@@ -42,12 +42,18 @@ public class InventorySlot : MonoBehaviour,IPointerClickHandler
             {
                 if (activeShop != null)
                 {
+                    // 能力道具为永久持有，不可出售
+                    if (itemSO.unlocksAbility != Ability.None) return;
                     activeShop.SellItem(itemSO);
                     quantity--;
                     UpdateUI();
                 }
                 else
+                {
+                    // 能力道具获得即永久生效，无需在背包中手动"使用"
+                    if (itemSO.unlocksAbility != Ability.None) return;
                     inventoryManager.UseItem(this);
+                }
             }
             else if (eventData.button == PointerEventData.InputButton.Right)
             {
@@ -68,7 +74,8 @@ public class InventorySlot : MonoBehaviour,IPointerClickHandler
             itemImage.gameObject.SetActive(true);
             itemImage.sprite = itemSO.icon;
             itemImage.color = new Color(1f, 1f, 1f, 1f);
-            quantityText.text = quantity.ToString();
+            // 能力道具唯一持有，不显示堆叠数量（对齐塞尔达道具栏）
+            quantityText.text = itemSO.unlocksAbility != Ability.None ? "" : quantity.ToString();
         }
         else
         {

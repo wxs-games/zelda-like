@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02509613922165f40b3de5a5351ee817, type: 3}
   m_Name: Femur
   m_EditorClassIdentifier: 
+  id: femur
   itemName: 
   itemDescription: 
   icon: {fileID: 21300000, guid: 336423d3f5c2ce94a81355e75eeef83a, type: 3}
@@ -22,3 +23,6 @@ MonoBehaviour:
   speed: 0
   damage: 0
   duration: 0
+  unlocksAbility: 0
+  worldFrames: []
+  worldFrameRate: 8

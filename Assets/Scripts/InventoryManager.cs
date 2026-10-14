@@ -39,6 +39,11 @@ public class InventoryManager : MonoBehaviour
     {
         if (slot.itemSO == null || slot.quantity <= 0)
             return;
+
+        // 能力道具（剑/弓）永久持有，禁止丢弃——对齐塞尔达道具栏行为
+        if (slot.itemSO.unlocksAbility != Ability.None)
+            return;
+
         DropLoot(slot.itemSO, 1, false);
         slot.quantity--;
         if (slot.quantity <= 0)
@@ -78,7 +83,13 @@ public class InventoryManager : MonoBehaviour
             goldText.text = gold.ToString();
             return;
         }
-        
+
+        // 塞尔达式设计：能力道具碰到即解锁，无需再手动使用
+        if (itemSO.unlocksAbility != Ability.None)
+        {
+            itemEffectApplier.ApplyItemEffects(itemSO);
+        }
+
         foreach (var slot in itemSlots)
         {
             if (slot.itemSO == itemSO && slot.quantity < itemSO.stackSize)
@@ -127,6 +138,12 @@ public class InventoryManager : MonoBehaviour
         if (slot.itemSO != null && slot.quantity >= 0)
         {
             itemEffectApplier.ApplyItemEffects(slot.itemSO);
+
+            // 能力道具（剑/弓）永久持有，使用不消耗数量——对齐塞尔达正版的道具栏行为
+            if (slot.itemSO.unlocksAbility != Ability.None)
+            {
+                return;
+            }
 
             slot.quantity--;
             if (slot.quantity <= 0)
