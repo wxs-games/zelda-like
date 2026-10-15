@@ -9,7 +9,9 @@ public class PlayerHealth : MonoBehaviour
     public Animator healthTextAnim;
     void Start()
     {
-        healthText.text = "HP: " + StatsManager.Instance.playerCurrentHealth + "/" + StatsManager.Instance.playerMaxHealth;
+        // ForestArea 没有 UI 树，healthText 引用会为空，判空避免 NRE
+        if (healthText != null)
+            healthText.text = "HP: " + StatsManager.Instance.playerCurrentHealth + "/" + StatsManager.Instance.playerMaxHealth;
     }
     public void ChangeHealth(float amount)
     {
@@ -17,8 +19,9 @@ public class PlayerHealth : MonoBehaviour
 
         StatsManager.Instance.playerCurrentHealth += amount;
         StatsManager.Instance.playerCurrentHealth = Mathf.Clamp(StatsManager.Instance.playerCurrentHealth, 0, StatsManager.Instance.playerMaxHealth);
-        healthTextAnim.Play("TextUpdate");
-        healthText.text = "HP: " + StatsManager.Instance.playerCurrentHealth + "/" + StatsManager.Instance.playerMaxHealth;
+        if (healthTextAnim != null) healthTextAnim.Play("TextUpdate");
+        if (healthText != null)
+            healthText.text = "HP: " + StatsManager.Instance.playerCurrentHealth + "/" + StatsManager.Instance.playerMaxHealth;
         if (StatsManager.Instance.playerCurrentHealth <= 0)
         {
             gameObject.SetActive(false);

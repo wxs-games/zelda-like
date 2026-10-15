@@ -25,10 +25,22 @@ public class StatsManager : MonoBehaviour
     public float playerMaxHealth;
     public float playerCurrentHealth;
 
-    [Header("Unlocked Abilities")]
-    [Tooltip("能力解锁是永久的，区别于 ItemEffectApplier 里的 duration 临时 buff")]
-    public bool hasSword = false;
-    public bool hasBow = false;
+    // Unlocked Abilities：能力解锁是永久的，区别于 ItemEffectApplier 里的 duration 临时 buff；
+    // 静态后备字段让能力跨场景切换不丢失（属性不进 Inspector，状态以代码为准）
+    public bool hasSword
+    {
+        get => _hasSword;
+        set => _hasSword = value;
+    }
+    public bool hasBow
+    {
+        get => _hasBow;
+        set => _hasBow = value;
+    }
+
+    // 静态后备字段：每个场景各有一份 StatsManager 实例，但能力状态全局唯一
+    static bool _hasSword = false;
+    static bool _hasBow = false;
 
     private void Awake()
     {

@@ -74,8 +74,8 @@ public class InventorySlot : MonoBehaviour,IPointerClickHandler
             itemImage.gameObject.SetActive(true);
             itemImage.sprite = itemSO.icon;
             itemImage.color = new Color(1f, 1f, 1f, 1f);
-            // 能力道具唯一持有，不显示堆叠数量（对齐塞尔达道具栏）
-            quantityText.text = itemSO.unlocksAbility != Ability.None ? "" : quantity.ToString();
+            // 只要槽内有物品就显示当前数量（含 1 个）；空格在下方分支清空
+            quantityText.text = quantity.ToString();
         }
         else
         {
