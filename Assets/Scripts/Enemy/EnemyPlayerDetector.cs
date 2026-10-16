@@ -29,7 +29,11 @@ public class EnemyPlayerDetector : MonoBehaviour
 
             if (enemyController != null)
             {
-                enemyController.ChangeState(EnemyState.Idle);
+                // 配了路点就回巡视，否则回站桩
+                enemyController.ChangeState(
+                    enemyController.patrolPoints != null && enemyController.patrolPoints.Length >= 2
+                        ? EnemyState.Patrolling
+                        : EnemyState.Idle);
             }
         }
 

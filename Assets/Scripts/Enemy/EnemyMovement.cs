@@ -33,11 +33,25 @@ public class EnemyMovement : MonoBehaviour
 
     }
 
+    public void Patrol(Vector2 target)
+    {
+        if (enemyKnockbackable.isKnockback == false)
+        {
+            if (target.x > transform.position.x && facingDirection == -1
+                    || target.x < transform.position.x && facingDirection == 1)
+            {
+                Flip();
+            }
 
+            Vector2 direction = (target - (Vector2)transform.position).normalized;
+            co.rb.velocity = direction * co.patrolSpeed;
+        }
+    }
 }
 public enum EnemyState
 {
     Idle,
+    Patrolling,
     Chasing,
     Attacking,
 

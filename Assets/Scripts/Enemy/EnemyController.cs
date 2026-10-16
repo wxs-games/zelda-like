@@ -13,13 +13,23 @@ public class EnemyController : MonoBehaviour
     public bool canChase = true;
     public EnemyMovement en;
 
+    [Header("巡视")]
+    public Transform[] patrolPoints;
+    public float patrolSpeed = 1.5f;
+    public float patrolWaitTime = 1.5f;
+    [HideInInspector] public int patrolIndex;
+    [HideInInspector] public float patrolWait;
+
     private StateMachine<EnemyController> enemyStateMachine;
     private EnemyState currentStateEnum;
 
     void Start()
     {
         enemyStateMachine = new StateMachine<EnemyController>(this);
-        ChangeState(EnemyState.Idle);
+        // 配了路点就从巡视开始，否则保持原站桩
+        ChangeState(patrolPoints != null && patrolPoints.Length >= 2
+            ? EnemyState.Patrolling
+            : EnemyState.Idle);
     }
 
     public void ChangeState(EnemyState newState)
@@ -28,6 +38,7 @@ public class EnemyController : MonoBehaviour
         IEnemyState next = newState switch
         {
             EnemyState.Idle => IdleState.Instance,
+            EnemyState.Patrolling => PatrolState.Instance,
             EnemyState.Chasing => ChaseState.Instance,
             EnemyState.Attacking => AttackState.Instance,
             _ => IdleState.Instance
@@ -52,6 +63,17 @@ public class EnemyController : MonoBehaviour
             player.GetComponent<PlayerKnockbackable>().KnockBack(transform, knockbackForce);
             player.GetComponent<PlayerController>().ChangeState(PlayerKnockbackState.Instance);
         }
+    }
+
+    /// <summary>
+    /// 攻击动画收尾（由 Enemy_Torch_Attacking.anim 的动画事件调用）。
+    /// 配了路点回巡视，否则回站桩。
+    /// </summary>
+    public void OnAttackAnimComplete()
+    {
+        ChangeState(patrolPoints != null && patrolPoints.Length >= 2
+            ? EnemyState.Patrolling
+            : EnemyState.Idle);
     }
 
     public void StartAttackCooldown(float duration)
