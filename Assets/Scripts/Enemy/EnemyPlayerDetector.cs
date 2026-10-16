@@ -21,9 +21,16 @@ public class EnemyPlayerDetector : MonoBehaviour
 
         if (collision.gameObject.tag == "Player")
         {
-            enemyController.rb.velocity = Vector2.zero;
+            // 敌人被销毁的同帧仍可能补发退出事件，判空避免 MissingReferenceException
+            if (enemyController != null && enemyController.rb != null)
+            {
+                enemyController.rb.velocity = Vector2.zero;
+            }
 
-            enemyController.ChangeState(EnemyState.Idle);
+            if (enemyController != null)
+            {
+                enemyController.ChangeState(EnemyState.Idle);
+            }
         }
 
     }
