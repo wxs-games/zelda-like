@@ -1736,6 +1736,10 @@ MonoBehaviour:
   arrowPrefab: {fileID: 1562056964532187698, guid: a0156b842c0554a4b94cb3261c4bd36e, type: 3}
   aimDirection: {x: 1, y: 0}
   shootCoolDown: 0.5
+  detectRange: 6
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
   anim: {fileID: 1096534386}
 --- !u!114 &1096534390
 MonoBehaviour:

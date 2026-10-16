@@ -16,7 +16,8 @@ public class PlayerMoveState : IPlayerState
             return;
         }
 
-        if (Input.GetButtonDown("Shoot") && p.playerBow.enabled && p.playerBow.CanShoot())
+        // 范围内没有敌人时不进入射击状态，按键不消耗冷却
+        if (Input.GetButtonDown("Shoot") && p.playerBow.enabled && p.playerBow.CanShoot() && p.playerBow.HasEnemyInRange())
         {
             p.ChangeState(PlayerShootState.Instance);
             return;
