@@ -27,6 +27,23 @@ public class NPCInteractable : MonoBehaviour
     {
         if (playerInRange && Input.GetButtonDown("Interact"))
         {
+            // 优先级 1：商店开着 → F 关店（timeScale=0 时玩家走不出触发器，
+            // OnTriggerExit 不会触发，必须有按键关闭路径，否则卡死）
+            if (ShopKeeper.currentShopKeeper != null)
+            {
+                ShopKeeper.currentShopKeeper.CloseShop();
+                return;
+            }
+
+            // 优先级 2：对话进行中 → F 推进（无选项节点结束对话/进下一节点；
+            // 有选项节点 Advance 内部会忽略，等玩家点按钮）
+            if (DialogManager.Instance != null && DialogManager.Instance.IsInDialog)
+            {
+                DialogManager.Instance.Advance();
+                return;
+            }
+
+            // 优先级 3：正常开启对话
             Interact();
         }
     }

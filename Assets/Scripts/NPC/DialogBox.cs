@@ -35,7 +35,42 @@ public class DialogBox : MonoBehaviour
     {
         _cg = GetComponent<CanvasGroup>();
         if (_cg == null) _cg = gameObject.AddComponent<CanvasGroup>();
+        SetupOptionLayout();
         HideDialog();
+    }
+
+    /// <summary>
+    /// 修复选项按钮被排到屏幕外的问题：原来 Options 容器高度为 0，
+    /// VerticalLayoutGroup 把按钮排到对话框下方（世界坐标 y 为负，超出屏幕底边），
+    /// 玩家看不到也点不到按钮。这里把容器固定到对话框右侧、从底部向上排布
+    /// （JRPG 标准选项列表位），与左侧正文互不遮挡。
+    /// </summary>
+    private void SetupOptionLayout()
+    {
+        if (optionContainer == null) return;
+
+        var rt = optionContainer as RectTransform;
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0f, 0f);
+            // 对话框宽 1240，右侧留出 320 放选项列，正文显示在左侧
+            rt.anchoredPosition = new Vector2(900f, 8f);
+            // 高度容纳 5 个选项（5*40 + 4*2 = 208 ≤ 框高 220）
+            rt.sizeDelta = new Vector2(320f, 210f);
+        }
+
+        var vlg = optionContainer.GetComponent<VerticalLayoutGroup>();
+        if (vlg != null)
+        {
+            vlg.spacing = 2;
+            vlg.childAlignment = TextAnchor.LowerLeft;
+            vlg.childForceExpandHeight = false;
+            vlg.childForceExpandWidth = false;
+            vlg.childControlWidth = false;
+            vlg.childControlHeight = false;
+        }
     }
 
     public void ShowDialog()
@@ -161,7 +196,7 @@ public class DialogBox : MonoBehaviour
         // 运行时生成一个简单的按钮（Image + Text）
         var go = new GameObject("OptionTemplate", typeof(RectTransform), typeof(Image), typeof(Button));
         var rt = go.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(300, 60);
+        rt.sizeDelta = new Vector2(280, 40);
         var img = go.GetComponent<Image>();
         img.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
 
