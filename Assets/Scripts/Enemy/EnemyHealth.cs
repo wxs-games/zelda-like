@@ -2,8 +2,11 @@ using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
 {
+    [Tooltip("敌人类型标识（全小写英文，如 torch/slime），供任务系统击杀目标匹配")]
+    public string enemyId = "enemy";
+
     public int expReward = 3;
-    public delegate void MonsterDefeated(int exp);
+    public delegate void MonsterDefeated(string enemyId, int exp);
     public static event MonsterDefeated OnMonsterDefeated;
     private void Start()
     {
@@ -19,7 +22,7 @@ public class EnemyHealth : MonoBehaviour
         else if (StatsManager.Instance.enemyCurrentHealth <= 0)
         {
             Destroy(gameObject);
-            OnMonsterDefeated(expReward);
+            OnMonsterDefeated(enemyId, expReward);
         }
     }
 }

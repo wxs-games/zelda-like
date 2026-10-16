@@ -75,12 +75,18 @@ public class InventoryManager : MonoBehaviour
         }
         return false;
     }
+    /// <summary>增加金币并刷新 UI。任务奖励等系统统一走这里。</summary>
+    public void AddGold(int amount)
+    {
+        if (amount <= 0) return;
+        gold += amount;
+        if (goldText != null) goldText.text = gold.ToString();
+    }
     public void AddItem(ItemSO itemSO,int quantity)
     {
         if (itemSO.isGold)
         {
-            gold += quantity;
-            goldText.text = gold.ToString();
+            AddGold(quantity);
             return;
         }
 
