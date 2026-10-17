@@ -17,6 +17,8 @@ public class SkillSlot : MonoBehaviour
     public List<SkillSlot> prerequisiteSkillSlots;
     public void TryUpgradeSkill()
     {
+        if (skillSO == null) return;
+
         if (isUnlocked&&currentLevel<skillSO.maxLevel)
         {
             currentLevel++;
@@ -31,8 +33,12 @@ public class SkillSlot : MonoBehaviour
     }
     public bool CanUnlocked()
     {
+        if (skillSO == null) return false;
+        if (prerequisiteSkillSlots == null) return true;
+
         foreach (SkillSlot slot in prerequisiteSkillSlots)
         {
+            if (slot == null || slot.skillSO == null) continue;
             if (!slot.isUnlocked||slot.currentLevel<slot.skillSO.maxLevel )
             {
                 return false;

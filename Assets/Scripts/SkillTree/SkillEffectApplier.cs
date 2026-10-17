@@ -1,8 +1,10 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class SkillEffectApplier : MonoBehaviour
 {
     public PlayerCombat combat;
+
     private void OnEnable()
     {
         SkillSlot.OnAbilityPointSpent += HandleAbilityPointSpent;
@@ -13,6 +15,17 @@ public class SkillEffectApplier : MonoBehaviour
     }
     private void HandleAbilityPointSpent(SkillSlot slot)
     {
+        ApplySlotEffect(slot);
+    }
+
+    /// <summary>
+    /// 施加单个技能槽的**单级**效果。抽成公开方法是为了让调用方能显式驱动效果，
+    /// 而不必依赖「花技能点」事件的隐式触发。
+    /// </summary>
+    public void ApplySlotEffect(SkillSlot slot)
+    {
+        if (slot == null || slot.skillSO == null) return;
+
         string skillName = slot.skillSO.skillName;
         switch (skillName)
         {
@@ -23,7 +36,7 @@ public class SkillEffectApplier : MonoBehaviour
             // 挥剑能力本身只能通过拾取剑道具解锁，不能再用技能点绕过探索
             case "Sword Damage+":
                 StatsManager.Instance.playerDamage += 1;
-                combat.statsUI.UpdateDamage();
+                if (combat != null && combat.statsUI != null) combat.statsUI.UpdateDamage();
                 break;
 
             default:

@@ -376,6 +376,11 @@ public class SaveSystem : MonoBehaviour
             }
         }
         tree.UpdateAbilityPoints(0); // 顺带刷新点数文本
+
+        // 注意：这里**不能**按技能等级重放属性效果。
+        // stats 段存的是「已含技能加成」的最终属性（存档发生在花点之后），
+        // 若再叠加一次技能增量就会双重计算（实测 maxHP 102→104、dmg 4→7）。
+        // 技能效果与属性基线由 stats 段一次性对齐，技能等级只负责展示与后续加点。
     }
 
     private void ApplyQuests(QuestsData q)

@@ -24,7 +24,7 @@ public static class GameDatabaseBuilder
         }
 
         db.items = new List<ItemSO>(FindAll<ItemSO>());
-        db.skills = new List<SkillSO>(FindAll<SkillSO>());
+        db.skills = new List<SkillSO>(FindAll<SkillSO>(IsUsableSkill));
         db.quests = new List<QuestSO>(FindAll<QuestSO>());
 
         EditorUtility.SetDirty(db);
@@ -37,17 +37,31 @@ public static class GameDatabaseBuilder
         Debug.Log($"[GameDatabaseBuilder] 完成：道具 {db.items.Count}、技能 {db.skills.Count}、任务 {db.quests.Count}");
     }
 
-    private static List<T> FindAll<T>() where T : ScriptableObject
+    private static List<T> FindAll<T>(System.Predicate<T> accept = null) where T : ScriptableObject
     {
         var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
         var list = new List<T>(guids.Length);
         foreach (var guid in guids)
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
-            if (asset != null) list.Add(asset);
+            if (asset == null) continue;
+            if (accept != null && !accept(asset)) continue;
+            list.Add(asset);
         }
         list.Sort((a, b) => string.Compare(a.name, b.name));
         return list;
+    }
+
+    /// <summary>
+    /// 过滤掉「占位空壳」技能资产：建表期残留的空对象（skillName 为空、maxLevel 为 0）、
+    /// 或尚未填好名称与等级的半成品。这类资产进了数据库会以空字符串为键污染索引，
+    /// 读档反查时拿到 null。真正的空壳资产应由人工确认后删除。
+    /// </summary>
+    private static bool IsUsableSkill(SkillSO skill)
+    {
+        if (string.IsNullOrWhiteSpace(skill.skillName)) return false;
+        if (skill.maxLevel <= 0) return false;
+        return true;
     }
 
     private static void EnsureFolder(string path)
