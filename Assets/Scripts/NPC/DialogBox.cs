@@ -57,8 +57,8 @@ public class DialogBox : MonoBehaviour
             rt.pivot = new Vector2(0f, 0f);
             // 对话框宽 1240，右侧留出 320 放选项列，正文显示在左侧
             rt.anchoredPosition = new Vector2(900f, 8f);
-            // 高度容纳 5 个选项（5*40 + 4*2 = 208 ≤ 框高 220）
-            rt.sizeDelta = new Vector2(320f, 210f);
+            // 高度容纳 7 个选项（7*40 + 6*2 = 292 ≤ 300，含村民对话最多同时显示 7 项）
+            rt.sizeDelta = new Vector2(320f, 300f);
         }
 
         var vlg = optionContainer.GetComponent<VerticalLayoutGroup>();

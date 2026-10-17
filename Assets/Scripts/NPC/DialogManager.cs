@@ -55,12 +55,14 @@ public class DialogManager : MonoBehaviour
 
     /// <summary>
     /// 外部系统（QuestManager 等）查询条件：conditionId 为空视为无条件 true；
-    /// 未注册的 id 视为 false（防止误显示选项）。
+    /// 已注册 id 走注册表谓词；未走注册表的交给内置解析器（item.has./location.visited. 前缀）；
+    /// 都不认识的 id 视为 false（防止误显示选项）。
     /// </summary>
     public static bool CheckCondition(string conditionId)
     {
         if (string.IsNullOrEmpty(conditionId)) return true;
-        return _conditions.TryGetValue(conditionId, out var pred) && pred();
+        if (_conditions.TryGetValue(conditionId, out var pred)) return pred();
+        return DialogConditions.TryEvaluate(conditionId);
     }
 
     /// <summary>注销条件（条件变化时重注册即可覆盖，一般不需要注销）。</summary>
