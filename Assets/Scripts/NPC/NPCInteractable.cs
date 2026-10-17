@@ -25,7 +25,7 @@ public class NPCInteractable : MonoBehaviour
 
     void Update()
     {
-        if (playerInRange && Input.GetButtonDown("Interact"))
+        if (playerInRange && GameInput.InteractPressed)
         {
             // 优先级 1：商店开着 → F 关店（timeScale=0 时玩家走不出触发器，
             // OnTriggerExit 不会触发，必须有按键关闭路径，否则卡死）

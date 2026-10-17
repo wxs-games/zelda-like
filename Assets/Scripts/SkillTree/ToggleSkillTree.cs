@@ -11,7 +11,7 @@ public class ToggleSkillTree : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetButtonDown("ToggleSkillTree"))
+        if (GameInput.ToggleSkillTreePressed)
         {
             if (skillTreeOpen) ClosePanel();
             else OpenPanel();

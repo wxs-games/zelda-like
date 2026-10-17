@@ -42,11 +42,10 @@ public class PlayerBow : MonoBehaviour
         // 射击动画播放期间锁定瞄准方向，避免方向键覆盖自动索敌的目标方向
         if (anim.GetBool("isShooting")) return;
 
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-        if (horizontal!=0||vertical!=0)
+        Vector2 moveInput = GameInput.Move;
+        if (moveInput.x != 0f || moveInput.y != 0f)
         {
-            aimDirection = new Vector2(horizontal, vertical).normalized;
+            aimDirection = moveInput.normalized;
             anim.SetFloat("aimX",aimDirection.x);
             anim.SetFloat("aimY", aimDirection.y);
         }

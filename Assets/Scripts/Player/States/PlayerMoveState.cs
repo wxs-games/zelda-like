@@ -10,40 +10,39 @@ public class PlayerMoveState : IPlayerState
 
     public void OnUpdate(PlayerController p)
     {
-        if (Input.GetButtonDown("Slash") && p.playerCombat.enabled && p.playerCombat.CanAttack())
+        if (GameInput.AttackPressed && p.playerCombat.enabled && p.playerCombat.CanAttack())
         {
             p.ChangeState(PlayerAttackState.Instance);
             return;
         }
 
         // 范围内没有敌人时不进入射击状态，按键不消耗冷却
-        if (Input.GetButtonDown("Shoot") && p.playerBow.enabled && p.playerBow.CanShoot() && p.playerBow.HasEnemyInRange())
+        if (GameInput.ShootPressed && p.playerBow.enabled && p.playerBow.CanShoot() && p.playerBow.HasEnemyInRange())
         {
             p.ChangeState(PlayerShootState.Instance);
             return;
         }
 
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
+        Vector2 moveInput = GameInput.Move;
 
-        if (horizontal == 0f && vertical == 0f)
+        if (moveInput.x == 0f && moveInput.y == 0f)
         {
             p.ChangeState(PlayerIdleState.Instance);
             return;
         }
 
         int currentSpeed = StatsManager.Instance.playerSpeed;
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (GameInput.SprintHeld)
             currentSpeed += 3;
 
-        if ((horizontal > 0.1f && p.transform.localScale.x == -1f) || (horizontal < -0.1f && p.transform.localScale.x == 1f))
+        if ((moveInput.x > 0.1f && p.transform.localScale.x == -1f) || (moveInput.x < -0.1f && p.transform.localScale.x == 1f))
         {
             p.transform.localScale = new Vector3(-1f * p.transform.localScale.x, p.transform.localScale.y, p.transform.localScale.z);
         }
 
-        p.anim.SetFloat("horizontal", Mathf.Abs(horizontal));
-        p.anim.SetFloat("vertical", Mathf.Abs(vertical));
-        p.playerrb.velocity = new Vector2(horizontal, vertical) * currentSpeed;
+        p.anim.SetFloat("horizontal", Mathf.Abs(moveInput.x));
+        p.anim.SetFloat("vertical", Mathf.Abs(moveInput.y));
+        p.playerrb.velocity = moveInput * currentSpeed;
     }
 
     public void OnExit(PlayerController p)

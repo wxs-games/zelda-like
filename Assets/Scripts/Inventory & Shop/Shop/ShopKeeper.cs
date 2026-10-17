@@ -55,7 +55,7 @@ public class ShopKeeper : MonoBehaviour
     {
         // Esc 全局关店：timeScale=0 时玩家无法走动触发 OnTriggerExit，
         // 必须提供按键关闭路径（F 关店由 NPCInteractable 处理，这里补 Esc）。
-        if (isShopOpen && (Input.GetButtonDown("Cancel") || Input.GetKeyDown(KeyCode.Escape)))
+        if (isShopOpen && GameInput.CancelPressed)
         {
             CloseShop();
         }

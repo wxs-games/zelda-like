@@ -18,7 +18,7 @@ public class StatsUI : MonoBehaviour
     }
     private void Update()
     {
-        if (Input.GetButtonDown("ToggleStats"))
+        if (GameInput.ToggleStatsPressed)
         {
             if (statsOpen) ClosePanel();
             else OpenPanel();

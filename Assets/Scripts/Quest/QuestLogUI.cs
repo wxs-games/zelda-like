@@ -43,7 +43,7 @@ public class QuestLogUI : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetButtonDown("ToggleQuestLog"))
+        if (GameInput.ToggleQuestLogPressed)
         {
             if (_open) ClosePanel();
             else OpenPanel();

@@ -8,7 +8,7 @@ public class PlayerChangeEquipment : MonoBehaviour
     public PlayerBow bow;
     private void Update()
     {
-        if (Input.GetButtonDown("ChangeEquipment"))
+        if (GameInput.ChangeEquipmentPressed)
         {
             // 只在已解锁的能力之间切换：没解锁弓时按键无效；
             // 只解锁弓而未解锁剑时，弓保持装备，不会误启用剑
