@@ -1,6 +1,6 @@
 # 技术方案：01-Framework
 
-> 对应 requirements.md 的 R1~R5 | 命名空间统一为 `StarEco.Framework`
+> 对应 requirements.md 的 R1~R5 | 命名空间统一为 `ProjectName.Framework`
 
 ## 1. 总体设计
 

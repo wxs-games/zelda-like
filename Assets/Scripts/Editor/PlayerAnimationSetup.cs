@@ -15,18 +15,18 @@ using UnityEngine.Rendering;
 /// 4. 生成 Player 预制体（挂 PlayerController）
 /// 菜单：Tools → Setup → Player Animation（幂等，可重复运行）
 ///
-/// 适配说明（相对可复用模板的原始版本）：
-/// - 去掉 StarEco.* 命名空间：zeldaLike 全工程脚本使用全局命名空间。
-/// - 去掉 PlayerConfig 与 PlayerAnimatorDriver：zeldaLike 不存在这两个类型
-///   （玩家参数不走 SO 配置，动画由 Scripts/Player/States 下的状态机驱动）。
-/// - 帧目录随工程美术布局改为 Assets/Art/Player/Frames。
+/// 相对可复用模板（gongzuoliu/unity-art-pipeline）的适配说明：
+/// - 模板用 `ProjectName` 作根命名空间占位；本工程脚本全部在全局命名空间，故删除该前缀。
+/// - 模板引用的 PlayerConfig 与 PlayerAnimatorDriver 在本工程不存在
+///   （玩家参数不走 SO 配置，动画由 Scripts/Player/States 状态机驱动），已裁剪相应调用。
+/// - 帧目录随本工程美术布局改为 Assets/Art/Player/Frames。
 /// </summary>
 public static class PlayerAnimationSetup
 {
-private const string FramesRoot = "Assets/Art/Player/Frames";
-private const string OutputRoot = "Assets/Animations/Player";
-private const string ControllerPath = "Assets/Animations/Player/Player.controller";
-private const string PrefabPath = "Assets/Prefabs/Player/Player.prefab";
+    private const string FramesRoot = "Assets/Art/Player/Frames";
+    private const string OutputRoot = "Assets/Animations/Player";
+    private const string ControllerPath = "Assets/Animations/Player/Player.controller";
+    private const string PrefabPath = "Assets/Prefabs/Player/Player.prefab";
 
     // 目录名 → (clip名, 是否循环, 采样率)。采样率取排期表 Samples 列（未声明则用默认 12）。
     private const float DefaultFrameRate = 12f;
@@ -483,8 +483,8 @@ private const string PrefabPath = "Assets/Prefabs/Player/Player.prefab";
 
         go.AddComponent<Animator>().runtimeAnimatorController = controller;
 
-        // zeldaLike 的 PlayerController 只持有 Animator 引用，参数不走 SO 配置，
-        // 因此这里不做字段注入（模板原版注入的 _config 在本工程不存在）。
+        // 本工程的 PlayerController 只持有 Animator 引用，参数不走 SO 配置，
+        // 因此模板中的 _config 注入与 PlayerAnimatorDriver 挂载在此一并裁剪。
         go.AddComponent<PlayerController>();
 
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);

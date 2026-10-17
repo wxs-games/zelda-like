@@ -1,6 +1,6 @@
 # 技术方案：02-PlayerController
 
-> 对应 requirements.md R1~R5 | 命名空间 `StarEco.Player`
+> 对应 requirements.md R1~R5 | 命名空间 `ProjectName.Player`
 
 ## 1. 结构
 
@@ -41,7 +41,7 @@ Player（Prefab，M2 末或 M3 初创建）
 
 ## 3. 一键动画搭建工具（Editor）
 
-`Assets/Scripts/Editor/PlayerAnimationSetup.cs`，菜单 `StarEco/Setup/Player Animation`：
+`Assets/Scripts/Editor/PlayerAnimationSetup.cs`，菜单 `Tools/Setup/Player Animation`：
 1. 遍历 `Art/Art/Player/Frames/<Anim>/` 下 png，设 importer.textureType = Sprite（单精灵，无需切片——美术是逐帧单文件）
 2. 生成 AnimationClip：ObjectReferenceKeyframe 绑定 sprite，采样 12fps，按文件名自然排序，存 `Assets/Animations/Player/<Anim>.anim`
 3. 生成 AnimatorController：

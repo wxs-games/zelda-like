@@ -1,6 +1,6 @@
 # 技术方案：03-Combat
 
-> 对应 requirements.md R1~R8 | 命名空间 `StarEco.Player` / `StarEco.Combat`
+> 对应 requirements.md R1~R8 | 命名空间 `ProjectName.Player` / `ProjectName.Combat`
 > 前置：M2 状态机、PlayerAnimatorDriver、PlayerAnimationSetup 生成的 20 参数/23 状态控制器（含 Attack/Attack2/Attack3/AttackAir 全部状态与转移）已就位
 
 ## 1. 结构
@@ -61,8 +61,8 @@ Player（Prefab，M2 已创建）
 - **HP 放 PlayerCombat 而非 PlayerConfig**：Config 是手感参数（静态），HP 是运行时状态（会被存档读写，M6 SaveSystem 对接）
 - **攻击不位移（原地攻击）**：横版轻量战斗，位移斩击后续若需要再由事件帧施加小推力；减少空中攻击与平台边缘的组合 bug 面
 - **开窗用事件而非定时器**：动画帧率即攻击节奏权威，改帧只需改 clip 事件，代码零改动
-- **IHittable 提前定义**：M4 敌人接入零返工，命中流水线与 M5 净化攻击共用同一接口（净化 = 另一种 DamageInfo）
-- **HeavyAttack/Dash/Roll 排除**：控制器已有状态但玩法依赖未到（净化剂经济、闪避无敌设计），接线点已预留（Trigger 名已存在）
+- **IHittable 提前定义**：M4 敌人接入零返工，命中流水线与 M5 特殊攻击共用同一接口（特殊攻击 = 另一种 DamageInfo）
+- **HeavyAttack/Dash/Roll 排除**：控制器已有状态但玩法依赖未到（资源经济、闪避无敌设计），接线点已预留（Trigger 名已存在）
 
 ## 7. 风险
 
