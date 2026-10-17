@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
 /// 底部对话框：织梦岛/旷野之息风格（黑条 + 头像 + 名字 + 文字 + 选项按钮）。
 /// 由 DialogManager 驱动，通过 RenderNode 刷新内容。
 /// </summary>
-public class DialogBox : MonoBehaviour
+public class DialogBox : MonoBehaviour, IPointerClickHandler
 {
     [Header("组件引用")]
     [Tooltip("说话者名字文本")]
@@ -37,6 +38,15 @@ public class DialogBox : MonoBehaviour
         if (_cg == null) _cg = gameObject.AddComponent<CanvasGroup>();
         SetupOptionLayout();
         HideDialog();
+    }
+
+    /// <summary>
+    /// 点按对话框推进（手游触屏路径）。
+    /// 有选项的节点 Advance 内部会忽略，点选项按钮走 Button 自身事件不会冒泡到这里。
+    /// </summary>
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (DialogManager.Instance != null) DialogManager.Instance.Advance();
     }
 
     /// <summary>
