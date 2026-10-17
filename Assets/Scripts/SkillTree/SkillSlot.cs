@@ -56,6 +56,8 @@ public class SkillSlot : MonoBehaviour
     }
     private void UpdateUI()
     {
+        if (skillSO == null || skillIcon == null) return;
+
         skillIcon.sprite = skillSO.skillIcon;
         if (isUnlocked)
         {
@@ -69,5 +71,11 @@ public class SkillSlot : MonoBehaviour
             skillIcon.color = Color.grey;
             skillLevelText.text = "Locked";
         }
+    }
+
+    /// <summary>对外公开的刷新入口：读档直接改字段后调用，避免依赖私有的 UpdateUI。</summary>
+    public void RefreshUI()
+    {
+        UpdateUI();
     }
 }

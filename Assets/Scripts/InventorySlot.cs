@@ -69,6 +69,7 @@ public class InventorySlot : MonoBehaviour,IPointerClickHandler
         {
             itemSO = null;
         }
+        if (itemImage == null || quantityText == null) return;
         if (itemSO != null)
         {
             itemImage.gameObject.SetActive(true);

@@ -223,6 +223,75 @@ public class QuestManager : MonoBehaviour
         return DialogManager.CheckCondition(quest.completionConditionId);
     }
 
+    // ========== 存档导出 / 导入 ==========
+    //
+    // JsonUtility 不能序列化 Dictionary，所以这里把 _states / _progress
+    // 转成可序列化的平行列表交给 SaveSystem，读档时再转回去。
+
+    /// <summary>导出任务状态与进度（存档系统调用）。</summary>
+    public QuestsData ExportSaveData()
+    {
+        var data = new QuestsData();
+
+        foreach (var quest in quests)
+        {
+            if (quest == null) continue;
+            if (GetState(quest.questId) != QuestState.NotAccepted)
+                data.activeQuestIds.Add(quest.questId);
+        }
+
+        foreach (var kv in _states)
+        {
+            data.states.Add(new QuestStateEntry { questId = kv.Key, stateValue = (int)kv.Value });
+        }
+
+        foreach (var kv in _progress)
+        {
+            data.progress.Add(new QuestProgressEntry { questId = kv.Key, objectiveProgress = kv.Value });
+        }
+
+        return data;
+    }
+
+    /// <summary>导入任务状态与进度（存档系统调用）。database 用于校验任务 ID 是否存在。</summary>
+    public void ImportSaveData(QuestsData data, GameDatabase database)
+    {
+        if (data == null) return;
+
+        _states.Clear();
+        _progress.Clear();
+
+        // 先全部置回未接，保证配置里新增的任务也有默认状态
+        foreach (var quest in quests)
+        {
+            if (quest == null || string.IsNullOrEmpty(quest.questId)) continue;
+            _states[quest.questId] = QuestState.NotAccepted;
+        }
+
+        foreach (var entry in data.states)
+        {
+            if (string.IsNullOrEmpty(entry.questId)) continue;
+            if (database != null && database.GetQuest(entry.questId) == null)
+            {
+                Debug.LogWarning($"[Quest] 存档中的任务 ID 不存在，已跳过：{entry.questId}");
+                continue;
+            }
+            _states[entry.questId] = (QuestState)entry.stateValue;
+        }
+
+        foreach (var entry in data.progress)
+        {
+            if (string.IsNullOrEmpty(entry.questId)) continue;
+            _progress[entry.questId] = entry.objectiveProgress ?? new int[0];
+        }
+
+        // 通知 UI 全量刷新
+        foreach (var quest in quests)
+        {
+            if (quest != null) NotifyChanged(quest);
+        }
+    }
+
     private void NotifyChanged(QuestSO quest)
     {
         OnQuestChanged?.Invoke(quest);

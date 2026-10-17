@@ -1,3 +1,5 @@
+using System;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -63,5 +65,39 @@ public class MenuHubUI : MonoBehaviour
     {
         CloseHub();
         if (questLogUI != null) questLogUI.OpenPanel();
+    }
+
+    // ========== 存档条目 ==========
+
+    [Tooltip("手动存档按钮（留空则按钮仍可用，只是不提示路径）")]
+    public TMP_Text saveHint;
+
+    public void SaveGame()
+    {
+        CloseHub();
+        if (SaveSystem.Instance == null)
+        {
+            Debug.LogWarning("[MenuHubUI] SaveSystem 未就绪，无法存档");
+            return;
+        }
+        if (SaveSystem.Instance.SaveGame() && saveHint != null)
+            saveHint.text = "已存档 " + DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    public void LoadGame()
+    {
+        CloseHub();
+        if (SaveSystem.Instance == null)
+        {
+            Debug.LogWarning("[MenuHubUI] SaveSystem 未就绪，无法读档");
+            return;
+        }
+        if (!SaveSystem.HasSave)
+        {
+            Debug.LogWarning("[MenuHubUI] 还没有存档");
+            if (saveHint != null) saveHint.text = "暂无存档";
+            return;
+        }
+        SaveSystem.Instance.LoadGame();
     }
 }
