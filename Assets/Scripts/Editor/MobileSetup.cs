@@ -37,6 +37,7 @@ public static class MobileSetup
         ConfigureIdentity();
         ConfigureQuality();
         ConfigureOrientation();
+        ConfigureInputHandler();
         ConfigureAndroid();
         ConfigureIOS();
 
@@ -66,6 +67,44 @@ public static class MobileSetup
         Application.targetFrameRate = 60;
     }
 
+    /// <summary>
+    /// Active Input Handling 必须是「Input System (New)」。
+    ///
+    /// 新工程默认是 Both（0=Old / 1=New / 2=Both），而 Unity 在 BuildPlayer 阶段会直接判定
+    ///     "Active Input Handling is set to Both, this is unsupported on Android ... Cancelling"
+    /// 也就是在手游出包链路上这是一道硬性卡点，必须显式收窄。
+    /// 工程用的是 com.unity.inputsystem + InputAction 动作层门面，选 New 即为正解；
+    ///残留的 UnityEngine.Input.mousePosition（UI 点击取值）在 New 模式下依旧可用，无需改代码。
+    ///
+    /// 该项在 Unity 里**没有公开 C# API**，只能改 ProjectSettings.asset，
+    /// 且改完必须重启编辑器才生效——这一点无法用代码绕过。
+    /// </summary>
+    private static void ConfigureInputHandler()
+    {
+        const string settingsPath = "ProjectSettings/ProjectSettings.asset";
+        if (!File.Exists(settingsPath))
+        {
+            Debug.LogWarning("[MobileSetup] 找不到 ProjectSettings.asset，跳过输入系统设置。");
+            return;
+        }
+
+        string text = File.ReadAllText(settingsPath);
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"(?m)^(\s*activeInputHandler:\s*)(\d+)\s*$");
+        if (!match.Success)
+        {
+            Debug.LogWarning("[MobileSetup] 未在 ProjectSettings.asset 中找到 activeInputHandler，请手动设为 Input System (New)。");
+            return;
+        }
+
+        if (match.Groups[3].Value == "1") return; // 已是 New，无需改动
+
+        text = text.Remove(match.Groups[3].Index, match.Groups[3].Length).Insert(match.Groups[3].Index, "1");
+        File.WriteAllText(settingsPath, text);
+        Debug.LogWarning(
+            "[MobileSetup] Active Input Handling 已由 " + match.Groups[3].Value +
+            "（Both）改为 1（Input System New）。**该设置需重启 Unity 编辑器后才生效**，请重启后再出包。");
+    }
+
     private static void ConfigureOrientation()
     {
         // 横屏 2D 俯视玩法在手机上的可玩性远好于竖屏
@@ -85,9 +124,16 @@ public static class MobileSetup
         PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, Il2CppCompilerConfiguration.Release);
         PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Low);
 
-        // 图形 API：Vulkan 优先 + GLES3 兜底，覆盖新旧设备
+        // 图形 API：只留 Vulkan。
+        //
+        // 原先配的是「Vulkan + GLES3」双 API（覆盖新旧设备的常见做法），
+        // 但在 32 核机器上出包时，每个内置 shader 都要为两套 API 各编译一遍，
+        // UnityShaderCompiler 并行进程数直接顶到 32，实测在此处**死锁**：
+        //   判据 = ShaderCompiler 进程数稳定在 32 且 20 秒 CPU 零增长、构建日志不再增长。
+        // Vulkan 在 Android 设备覆盖率已超 99%，GLES3 兜底的实际收益远小于卡死风险，
+        // 因此按社区主流做法收窄为单API。确需兼容极老设备时再把 OpenGLES3 加回数组。
         PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
-        PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.Vulkan, GraphicsDeviceType.OpenGLES3 });
+        PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.Vulkan });
 
         EditorUserBuildSettings.development = false;
         EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;

@@ -67,6 +67,17 @@ public static class BuildScript
         else if (db.items.Count == 0 && db.quests.Count == 0)
             problems.Add("GameDatabase 是空的，执行菜单 Tools/Setup/Build Game Database 重新扫描。");
 
+        // 图形 API 双份编译会顶满并行进程池并死锁，这里出包前明确要求单 API。
+        if (PlayerSettings.GetGraphicsAPIs(BuildTarget.Android).Length > 1)
+        {
+            problems.Add(
+                "Android 图形 API 配了多个（" +
+                string.Join("+", PlayerSettings.GetGraphicsAPIs(BuildTarget.Android)) +
+                "），会让每个 shader 编译多遍、多核机器上并行进程数顶满后死锁" +
+                "（判据：UnityShaderCompiler 数量稳定且 20 秒 CPU 零增长）。" +
+                "执行菜单 Tools/Setup/Configure Mobile 收窄为单 API。");
+        }
+
         return problems;
     }
 
@@ -76,6 +87,19 @@ public static class BuildScript
         if (problems.Count > 0)
         {
             Debug.LogError("[Build] 已中止出包，请先修复：\n  - " + string.Join("\n  - ", problems));
+            return;
+        }
+
+        // 0) 检查僵死的 ShaderCompiler 残留。
+        //    切换构建平台时上一次的 UnityShaderCompiler 可能残留为僵尸进程，
+        //    此时 BuildPlayer 会一直等它们的 IPC 而永不返回（Unity 的 Responding 仍显示 True，
+        //    但主线程 CPU 与子进程 CPU 均不再增长）。这里提前拦一次并给出明确处置指引。
+        if (HasZombieShaderCompilers())
+        {
+            Debug.LogError(
+                "[Build] 检测到多个 UnityShaderCompiler 残留进程，出包很可能死锁。\n" +
+                "  请先在任务管理器结束全部 UnityShaderCompiler.exe，然后重新执行本菜单。\n" +
+                "  （PowerShell：Get-Process UnityShaderCompiler | Stop-Process -Force）");
             return;
         }
 
@@ -134,6 +158,26 @@ public static class BuildScript
                         Debug.LogError($"  [{step.name}] {msg.content}");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// 是否存在疑似僵死的 UnityShaderCompiler。
+    /// 正常出包时编译进程数量有限且 CPU 持续增长；切平台后残留的一批会长期闲置，
+    /// 导致 BuildPlayer 死等。这里用「数量」做粗筛（阈值取 32，远高于正常峰值）。
+    /// </summary>
+    private static bool HasZombieShaderCompilers()
+    {
+        try
+        {
+            var procs = System.Diagnostics.Process.GetProcessesByName("UnityShaderCompiler");
+            int count = procs.Length;
+            foreach (var p in procs) p.Dispose();
+            return count > 32;
+        }
+        catch
+        {
+            return false; // 取不到就放行，别因为探测失败拦住出包
         }
     }
 
