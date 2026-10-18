@@ -1701,6 +1701,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   healthText: {fileID: 1285208466}
   healthTextAnim: {fileID: 1285208468}
+  respawnDelay: 1.5
+  respawnIndicator: {fileID: 0}
+  zeroVelocityOnRespawn: 1
 --- !u!114 &1096534388
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7594,6 +7597,7 @@ GameObject:
   - component: {fileID: 3387661722374607150}
   - component: {fileID: 1123601040326848760}
   - component: {fileID: 4745193523945885526}
+  - component: {fileID: 1635333393176302095}
   m_Layer: 0
   m_Name: GameRoot
   m_TagString: Untagged
@@ -7692,6 +7696,18 @@ MonoBehaviour:
   autoSaveOnPause: 1
   targetFrameRate: 60
   preventSleep: 1
+--- !u!114 &1635333393176302095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6045732960881485600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96b8e6371bac9aa49a22a70fd8c72499, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6134104309537424416
 GameObject:
   m_ObjectHideFlags: 0

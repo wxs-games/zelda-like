@@ -57,11 +57,34 @@ public class ShopInfo : MonoBehaviour
         itemNameText.text = "";
 
     }
+    /// <summary>
+    /// 让物品信息面板跟随指针。
+    /// 触屏与鼠标统一走 Input System 的 Pointer 设备——工程 Active Input Handling 是 New，
+    /// 旧 Input.mousePosition 虽在部分版本仍可用，但与 Touchscreen 的坐标不同源，
+    /// 真机上会出现「触摸后信息面板不跟随」。优先取触摸，其次取鼠标。
+    /// </summary>
     public void FollowMouse()
     {
-        Vector3 mousePosition = Input.mousePosition;
-        Vector3 offest = new Vector3(10, -10, 0);
+        Vector3 pointer = LastPointerPosition();
+        if (pointer == Vector3.zero) return;
 
-        infoPanelRect.position = mousePosition + offest;
+        Vector3 offset = new Vector3(10, -10, 0);
+        infoPanelRect.position = pointer + offset;
+    }
+
+    private static Vector3 LastPointerPosition()
+    {
+        var mouse = UnityEngine.InputSystem.Mouse.current;
+        if (mouse != null)
+            return mouse.position.ReadValue();
+
+        var touchscreen = UnityEngine.InputSystem.Touchscreen.current;
+        if (touchscreen != null)
+        {
+            var primary = touchscreen.primaryTouch;
+            if (primary.press.isPressed)
+                return primary.position.ReadValue();
+        }
+        return Vector3.zero;
     }
 }
