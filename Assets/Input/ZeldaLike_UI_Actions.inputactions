@@ -12,9 +12,8 @@
       ],
       "bindings": [
         { "name": "", "id": "2b3c4d5e-0001-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "", "action": "Point", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "2b3c4d5e-0002-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Touchscreen>/position", "interactions": "", "processors": "", "groups": "", "action": "Point", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "2b3c4d5e-0003-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "", "action": "Click", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "2b3c4d5e-0004-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Touchscreen>/primaryTouch/press", "interactions": "", "processors": "", "groups": "", "action": "Click", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0004-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Touchscreen>/touch*/press", "interactions": "", "processors": "", "groups": "", "action": "Click", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "2b3c4d5e-0005-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/scroll", "interactions": "", "processors": "", "groups": "", "action": "ScrollWheel", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "2b3c4d5e-0006-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/middleButton", "interactions": "", "processors": "", "groups": "", "action": "MiddleClick", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "2b3c4d5e-0007-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "", "action": "RightClick", "isComposite": false, "isPartOfComposite": false }

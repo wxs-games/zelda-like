@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 /// <summary>
@@ -58,6 +60,13 @@ public class FloatingOnScreenStick : MonoBehaviour,
     private Vector2 _pressScreenPos;
     private bool _pressed;
 
+    /// <summary>
+    /// 当前控制摇杆的指针是否来自触摸屏。
+    /// 只有触摸指针才启用「手指是否还在屏上」的看门狗——鼠标指针没有对应的
+    /// Touchscreen 槽位，若对它也做校验，编辑器里用鼠标拖摇杆会被误判成已松手。
+    /// </summary>
+    private bool _isTouchPointer;
+
     private float Travel => maxKnobTravel > 0f ? maxKnobTravel : 110f;
 
     void OnEnable()
@@ -78,6 +87,9 @@ public class FloatingOnScreenStick : MonoBehaviour,
         _pointerId = eventData.pointerId;
         _pressScreenPos = eventData.position;
         _pressed = true;
+        // ExtendedPointerEventData 才带 pointerType；普通 PointerEventData 视为非触摸
+        _isTouchPointer = eventData is ExtendedPointerEventData ext
+                          && ext.pointerType == UIPointerType.Touch;
 
         if (visualRoot != null)
         {
@@ -127,14 +139,74 @@ public class FloatingOnScreenStick : MonoBehaviour,
         Report($"Drag delta={delta} value={normalized}");
     }
 
-    public void OnPointerUp(PointerEventData eventData)
+    /// <summary>
+    /// 看门狗：每帧校验「控制摇杆的那根手指是否还按在屏幕上」。
+    ///
+    /// 【为什么需要】
+    ///   复位原本只依赖 OnPointerUp。但真机实测出现过「松手后摇杆不复位、
+    ///   角色一直朝最后方向走」——Up 事件要么没送达、要么 pointerId 与按下时
+    ///   不一致（按下记的是 A，抬起回调给的是 B），于是 OnPointerUp 的
+    ///   `eventData.pointerId != _pointerId` 早退，Move 永远停在最后的值。
+    ///   输入类的 bug 不能只靠「事件一定会到」来保证正确性，必须有状态兜底。
+    ///
+    /// 判定方式：InputSystemUIInputModule 的触摸 pointerId 编码为
+    ///   (deviceId &lt;&lt; 24) + touchId
+    /// 所以逐槽位重建该 id 并比对，再读 press 状态即可精确知道那根手指还在不在。
+    /// 不要用 `pointerId &amp; 0xFF` 反解 touchId——touchId 超过 255 会被截断。
+    /// </summary>
+    void Update()
     {
-        if (eventData == null) return;
-        if (eventData.pointerId != _pointerId) return;
+        if (!_pressed || !_isTouchPointer) { _missingFrames = 0; return; }
 
-        Report($"PointerUp id={_pointerId}");
+        if (IsControllingTouchStillDown())
+        {
+            _missingFrames = 0;
+            return;
+        }
+
+        // 连续两帧都判定「手指已不在」才复位：单帧读到异常值（个别机型 touchId
+        // 在某帧读作 0）不该让正在拖动的摇杆突然归零。
+        _missingFrames++;
+        if (_missingFrames < 2) return;
+
+        Report("看门狗：控制手指已不在屏上，强制复位");
+        _missingFrames = 0;
+        ResetStick();
+    }
+
+    private int _missingFrames;
+
+    private bool IsControllingTouchStillDown()
+    {
+        // 必须遍历**所有** Touchscreen 设备，不能只看 Touchscreen.current。
+        // 真机实测同时存在多个触摸设备（真实触摸屏 + adb 注入产生的虚拟设备），
+        // current 指向哪一个取决于「最后使用的是哪个设备」。只看 current 会在
+        // 多设备场景下与 _pointerId 的 deviceId 段对不上，从而把正在按住的
+        // 手指误判成已松开，摇杆被强行归零。
+        var devices = InputSystem.devices;
+        for (int d = 0; d < devices.Count; d++)
+        {
+            if (!(devices[d] is Touchscreen ts)) continue;
+
+            var touches = ts.touches;
+            for (int i = 0; i < touches.Count; i++)
+            {
+                int touchId = touches[i].touchId.ReadValue();
+                int encoded = (ts.deviceId << 24) + touchId;
+                if (encoded == _pointerId)
+                    return touches[i].press.isPressed;
+            }
+        }
+        return false;   // 所有设备上都找不到该触摸 → 已结束
+    }
+
+    /// <summary>把摇杆归零并释放控制权。Up / Disable / 看门狗三条路径共用。</summary>
+    private void ResetStick()
+    {
         _pointerId = -1;
         _pressed = false;
+        _isTouchPointer = false;
+        _missingFrames = 0;
 
         if (knob != null) knob.anchoredPosition = Vector2.zero;
         TouchInputBridge.SetMove(Vector2.zero);
@@ -144,15 +216,19 @@ public class FloatingOnScreenStick : MonoBehaviour,
             visualRoot.gameObject.SetActive(false);
     }
 
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (eventData == null) return;
+        if (eventData.pointerId != _pointerId) return;
+
+        Report($"PointerUp id={_pointerId}");
+        ResetStick();
+    }
+
     void OnDisable()
     {
-        _pointerId = -1;
-        _pressed = false;
-        if (knob != null) knob.anchoredPosition = Vector2.zero;
         // 控件被隐藏（暂停/对话/挂起）时必须清零，否则玩家松手后角色会一直朝最后方向走
-        TouchInputBridge.SetMove(Vector2.zero);
-        if (floatingMode && visualRoot != null)
-            visualRoot.gameObject.SetActive(false);
+        ResetStick();
     }
 
     private void ApplyIdleLook()

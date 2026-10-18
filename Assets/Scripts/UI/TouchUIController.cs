@@ -108,16 +108,9 @@ public class TouchUIController : MonoBehaviour
     /// <summary>三个按键是否已接过 onClick，防止每帧重复 AddListener。</summary>
     private bool _attackHooked, _changeWeaponHooked, _interactHooked;
 
-    /// <summary>临时排障覆盖层（真机读状态用，排完删 TouchOverlayDiag.cs 与本字段）。</summary>
-    private static TouchOverlayDiag _overlay;
-
     private void HookTouchButtons()
     {
-        if (!_attackHooked) HookButton(attackButton, () =>
-        {
-            TouchInputBridge.PressAttack();
-            if (_overlay != null) _overlay.CountAttackClick();
-        });
+        if (!_attackHooked) HookButton(attackButton, () => TouchInputBridge.PressAttack());
         if (!_changeWeaponHooked) HookButton(changeWeaponButton, () =>
         {
             var equip = FindObjectOfType<PlayerChangeEquipment>();
@@ -172,15 +165,6 @@ public class TouchUIController : MonoBehaviour
     void Awake()
     {
         _active = this;
-
-        // 【临时排障】创建屏幕状态覆盖层：真机截图即可读到同时手指数峰值、
-        // 攻击按钮点击次数、武器解锁与战斗组件启用状态。排完删掉这段。
-        if (_overlay == null)
-        {
-            var go = new GameObject("[TouchOverlayDiag]");
-            _overlay = go.AddComponent<TouchOverlayDiag>();
-            DontDestroyOnLoad(go);
-        }
     }
 
     void OnDestroy()
