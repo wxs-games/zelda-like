@@ -16,10 +16,14 @@ using UnityEngine;
 ///   3) 版本号不递增导致无法区分包（覆盖安装时用户拿到的还是旧包）。
 /// 本脚本把这三件事强制流程化。
 ///
-/// 约定：产物输出到工程同级的 Builds/<产品名>/，已由 .gitignore 排除。
+/// 约定：产物输出到工程根下的 Builds/（已被 .gitignore 的 `[Bb]uilds/` 排除）。
 /// </summary>
 public static class BuildScript
 {
+    /// <summary>
+    /// 产物目录。Application.dataPath 是「工程根/Assets」，所以这里取parent 得工程根。
+    /// 放工程根而不是工程外，是为了让出包目录跟着工程走（换机器拷贝工程时一起带走）。
+    /// </summary>
     private const string BuildRoot = "../Builds";
 
     [MenuItem("Build/出包/Android APK (内测)", priority = 0)]
