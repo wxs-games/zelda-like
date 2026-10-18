@@ -97,6 +97,21 @@ public class QuestsData
 
     /// <summary>questId → 该任务各目标的进度数组。</summary>
     public List<QuestProgressEntry> progress = new List<QuestProgressEntry>();
+
+    /// <summary>
+    /// enemyId → 本局累计击杀数。
+    /// 用于「接取任务前就把敌人杀了」的回补：读档后若任务进度丢失或未接，
+    /// 仍能凭这份历史数据判定目标是否已达成。
+    /// </summary>
+    public List<KillCountEntry> killTotals = new List<KillCountEntry>();
+}
+
+/// <summary>enemyId → 累计击杀数。</summary>
+[Serializable]
+public class KillCountEntry
+{
+    public string enemyId;
+    public int count;
 }
 
 [Serializable]

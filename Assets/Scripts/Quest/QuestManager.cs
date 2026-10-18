@@ -19,6 +19,29 @@ public class QuestManager : MonoBehaviour
     // questId → 每个 objective 的当前进度
     private readonly Dictionary<string, int[]> _progress = new Dictionary<string, int[]>();
 
+    /// <summary>
+    /// 本局游戏各enemyId 的累计击杀数（不区分是否接了对应任务）。
+    ///
+    /// 【为什么必须有这个，重要】
+    /// 进度原本只靠 EnemyHealth.OnMonsterDefeated 事件累加，而该事件只在
+    /// 「任务处于 InProgress」时才对任务生效（见 AdvanceObjectives）。
+    /// 于是出现经典边界 bug：**玩家在接取任务前就把敌人全杀光了**，
+    /// 接取那一刻 _progress 被清零，而此后再无击杀事件，任务永久卡在 0/N，
+    /// 永远无法交付。
+    ///
+    /// 现在接取时会用这份历史计数回补进度，若目标已达成则在同一次调用里
+    /// 直接翻成 Completed，玩家再找 NPC 说话就会命中「已完成」分支直接交付。
+    /// 这也顺带覆盖「读档后进度对了但状态没翻」等同类场景。
+    /// </summary>
+    private static readonly Dictionary<string, int> _killTotals = new Dictionary<string, int>();
+
+    /// <summary>取某enemyId 本局累计击杀数（无记录返回 0）。存档/调试可用。</summary>
+    public static int GetTotalKills(string enemyId)
+    {
+        if (string.IsNullOrEmpty(enemyId)) return 0;
+        return _killTotals.TryGetValue(enemyId, out var n) ? n : 0;
+    }
+
     /// <summary>任务状态或进度变化时触发（UI 订阅后整体刷新）。</summary>
     public static event Action<QuestSO> OnQuestChanged;
 
@@ -36,6 +59,8 @@ public class QuestManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private bool _subscribed;
+
     void Start()
     {
         // 初始化所有任务为未接，并向对话系统注册条件/动作
@@ -47,7 +72,13 @@ public class QuestManager : MonoBehaviour
             RegisterDialogBindings(quest);
         }
 
-        // 订阅全局游戏事件
+        // 订阅全局游戏事件。必须在这里而不是 Awake：
+        // Awake 里若是重复实例会 Destroy(this)，那种情况下不能订阅，
+        // 否则退订后仍留着一条野回调，导致击杀被记两次。
+        if (Instance != this) return;
+        if (_subscribed) return;
+        _subscribed = true;
+
         EnemyHealth.OnMonsterDefeated += HandleMonsterDefeated;
         Loot.OnItemLooted += HandleItemLooted;
     }
@@ -55,8 +86,12 @@ public class QuestManager : MonoBehaviour
     void OnDestroy()
     {
         // 静态事件必须退订，防止重复订阅
-        EnemyHealth.OnMonsterDefeated -= HandleMonsterDefeated;
-        Loot.OnItemLooted -= HandleItemLooted;
+        if (_subscribed)
+        {
+            EnemyHealth.OnMonsterDefeated -= HandleMonsterDefeated;
+            Loot.OnItemLooted -= HandleItemLooted;
+            _subscribed = false;
+        }
         if (Instance == this) Instance = null;
     }
 
@@ -128,7 +163,39 @@ public class QuestManager : MonoBehaviour
 
         _states[quest.questId] = QuestState.InProgress;
         _progress[quest.questId] = new int[quest.objectives != null ? quest.objectives.Count : 0];
+
+        // 回补接取之前就已经发生的击杀进度。
+        // 典型场景：玩家先把火把怪全杀了才去接任务，此时没有任何击杀事件会再来，
+        // 不回补的话任务会永远停在 0/N。回补后若已达标，EvaluateCompletion
+        // 会在同一次调用里把状态翻成 Completed，玩家再去对话即可直接交付。
+        BackfillProgressFromHistory(quest);
+        EvaluateCompletion(quest);
+
         NotifyChanged(quest);
+    }
+
+    /// <summary>
+    /// 用 _killTotals 里的历史击杀数初始化 KillEnemy 型目标的进度。
+    ///
+    /// 语义约定：**累计击杀量**（而不是"接取前击杀量"）——
+    /// 这样「接任务 → 杀够 → 交付」和「先杀光 → 接任务直接完成」两条路径
+    /// 结果一致，不会出现同一存档两种进度的不一致状态。
+    /// 已达上限的按 requiredCount 截断，不会溢出。
+    /// </summary>
+    private void BackfillProgressFromHistory(QuestSO quest)
+    {
+        if (quest.objectives == null || quest.objectives.Count == 0) return;
+        if (!_progress.TryGetValue(quest.questId, out var arr)) return;
+
+        for (int i = 0; i < arr.Length && i < quest.objectives.Count; i++)
+        {
+            var obj = quest.objectives[i];
+            if (obj == null || obj.type != QuestObjectiveType.KillEnemy) continue;
+            if (string.IsNullOrEmpty(obj.targetId)) continue;
+
+            int total = GetTotalKills(obj.targetId);
+            arr[i] = Mathf.Clamp(total, 0, obj.requiredCount);
+        }
     }
 
     /// <summary>交付任务：目标全部达成 + 完成条件满足 → 发金币/经验 → Delivered。由对话 action 触发。</summary>
@@ -160,6 +227,13 @@ public class QuestManager : MonoBehaviour
 
     private void HandleMonsterDefeated(string enemyId, int exp)
     {
+        // 先记全局累计，供以后接取任务时回补进度（见 _killTotals 注释）
+        if (!string.IsNullOrEmpty(enemyId))
+        {
+            _killTotals.TryGetValue(enemyId, out var cur);
+            _killTotals[enemyId] = cur + 1;
+        }
+
         AdvanceObjectives(QuestObjectiveType.KillEnemy, enemyId, 1);
     }
 
@@ -250,6 +324,11 @@ public class QuestManager : MonoBehaviour
             data.progress.Add(new QuestProgressEntry { questId = kv.Key, objectiveProgress = kv.Value });
         }
 
+        foreach (var kv in _killTotals)
+        {
+            data.killTotals.Add(new KillCountEntry { enemyId = kv.Key, count = kv.Value });
+        }
+
         return data;
     }
 
@@ -283,6 +362,35 @@ public class QuestManager : MonoBehaviour
         {
             if (string.IsNullOrEmpty(entry.questId)) continue;
             _progress[entry.questId] = entry.objectiveProgress ?? new int[0];
+        }
+
+        // 恢复累计击杀数：老存档没有这个字段，data.killTotals 可能为空，
+        // 此时用任务进度反推一个下界，避免读档后接任务无法回补。
+        if (data.killTotals != null && data.killTotals.Count > 0)
+        {
+            _killTotals.Clear();
+            foreach (var entry in data.killTotals)
+            {
+                if (string.IsNullOrEmpty(entry.enemyId)) continue;
+                _killTotals[entry.enemyId] = entry.count;
+            }
+        }
+        else
+        {
+            foreach (var quest in quests)
+            {
+                if (quest == null || quest.objectives == null) continue;
+                if (!_progress.TryGetValue(quest.questId, out var arr)) continue;
+                for (int i = 0; i < arr.Length && i < quest.objectives.Count; i++)
+                {
+                    var obj = quest.objectives[i];
+                    if (obj == null || obj.type != QuestObjectiveType.KillEnemy) continue;
+                    if (string.IsNullOrEmpty(obj.targetId)) continue;
+                    int cur;
+                    _killTotals.TryGetValue(obj.targetId, out cur);
+                    if (arr[i] > cur) _killTotals[obj.targetId] = arr[i];
+                }
+            }
         }
 
         // 通知 UI 全量刷新
