@@ -80,6 +80,9 @@ public class InventoryManager : MonoBehaviour
         if (amount <= 0) return;
         gold += amount;
         if (goldText != null) goldText.text = gold.ToString();
+        // 金币音放在这里而非各处调用点：拾取、任务交付、商店结算都走这一条路径，
+        // 只要真的加了钱就该有反馈声，不会漏也不会重复
+        SoundManager.Instance?.PlayCoin();
     }
     public void AddItem(ItemSO itemSO,int quantity)
     {

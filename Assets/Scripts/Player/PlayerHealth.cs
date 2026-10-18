@@ -68,6 +68,9 @@ public class PlayerHealth : MonoBehaviour
         stats.playerCurrentHealth = Mathf.Clamp(
             stats.playerCurrentHealth, 0, stats.playerMaxHealth);
 
+        // 受伤音只在扣血时响：回血（amount > 0）不该有受击反馈
+        if (amount < 0) SoundManager.Instance?.PlayPlayerHurt();
+
         if (healthTextAnim != null) healthTextAnim.Play("TextUpdate");
         RefreshHealthText();
 

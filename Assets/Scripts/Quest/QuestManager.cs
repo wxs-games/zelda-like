@@ -278,6 +278,9 @@ public class QuestManager : MonoBehaviour
         if (IsCompletionReached(quest))
         {
             _states[quest.questId] = QuestState.Completed;
+            // 完成音放在状态真正翻转的这一刻，而不是接取或交付：
+            // 「先杀光再接任务」也会在这里响一次，玩家能立刻听到「这事成了」
+            SoundManager.Instance?.PlayQuestComplete();
             NotifyChanged(quest);
         }
     }

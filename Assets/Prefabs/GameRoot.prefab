@@ -7592,6 +7592,7 @@ Transform:
   - {fileID: 4991061914542469945}
   - {fileID: 6113593302157852402}
   - {fileID: 3899380290392912687}
+  - {fileID: 3806295068696792725}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -8085,6 +8086,79 @@ RectTransform:
   m_AnchoredPosition: {x: 190, y: 190}
   m_SizeDelta: {x: 300, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &6964342071341705441
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3806295068696792725}
+  - component: {fileID: 1516474702325751189}
+  - component: {fileID: 2838564386121708506}
+  m_Layer: 0
+  m_Name: Audio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3806295068696792725
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6964342071341705441}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2129834394089260767}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1516474702325751189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6964342071341705441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6befc6e199e2ba24db9f4a00b6f3b5d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bgm: {fileID: 8300000, guid: 43b0ff2a9ce2dac4c8462319e7e76afe, type: 3}
+  bgmVolume: 0.35
+  swordSwing: {fileID: 8300000, guid: c48a56a6b355f8b48a72a64f489b460a, type: 3}
+  bowShoot: {fileID: 8300000, guid: 6b0ecf4d56f408e40b7f3126eaa82e56, type: 3}
+  enemyHit: {fileID: 8300000, guid: 45c9003ea71b5a24d95137ffbf3bc8b8, type: 3}
+  enemyDie: {fileID: 8300000, guid: 84f19b939e516a94d88bf313633a6955, type: 3}
+  coinPickup: {fileID: 8300000, guid: a87f57603a99afa439e21bfef2633b51, type: 3}
+  questComplete: {fileID: 8300000, guid: 7d48534d150f70f45820163104eaf00a, type: 3}
+  uiClick: {fileID: 8300000, guid: 255d532976506384db2ee6c637a539ce, type: 3}
+  purchase: {fileID: 8300000, guid: 71511c7fb19e7e745a59bcf723ccb06d, type: 3}
+  playerHurt: {fileID: 8300000, guid: d9f763c33aee06b42b76f9fdbdc9f7b7, type: 3}
+  uiHover: {fileID: 8300000, guid: b7bb1d11de936db45a8efa6a7fda8d89, type: 3}
+  levelUp: {fileID: 8300000, guid: 1e43be83778130b44962e45a774a9bc6, type: 3}
+  jump: {fileID: 8300000, guid: 2b306cffd229f1a4bb70f2a18907e696, type: 3}
+  sfxVolume: 0.7
+  sfxPoolSize: 8
+--- !u!114 &2838564386121708506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6964342071341705441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cec066dfeb991754cb8c68986e8d1a0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7094838829946026357
 GameObject:
   m_ObjectHideFlags: 0

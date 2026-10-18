@@ -21,8 +21,16 @@ public class EnemyHealth : MonoBehaviour
         }
         else if (StatsManager.Instance.enemyCurrentHealth <= 0)
         {
+            // 死亡音效盖过受击音效：最后一击只播死亡，避免两声叠在一起发糊
+            SoundManager.Instance?.PlayEnemyDie();
+
             Destroy(gameObject);
             OnMonsterDefeated(enemyId, expReward);
+        }
+        else
+        {
+            // 未致死才算受击
+            SoundManager.Instance?.PlayEnemyHit();
         }
     }
 }

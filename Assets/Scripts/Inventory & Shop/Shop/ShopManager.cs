@@ -33,6 +33,8 @@ public class ShopManager : MonoBehaviour
                 inventoryManager.gold -= price;
                 inventoryManager.goldText.text = inventoryManager.gold.ToString();
                 inventoryManager.AddItem(itemSO,1);
+                // 只在真正成交时响：金币不够或背包已满不该有「买到」的反馈
+                SoundManager.Instance?.PlayPurchase();
             }
         }
     }

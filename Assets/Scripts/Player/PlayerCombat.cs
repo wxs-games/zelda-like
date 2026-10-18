@@ -41,6 +41,10 @@ public class PlayerCombat : MonoBehaviour
 
     public void DealDamage()
     {
+        // 挥剑音打在动画的命中帧（DealDamage 由动画事件调用），
+        // 而不是 Attack()——后者是起手时刻，提前发声会与刀光错位、听起来很假
+        SoundManager.Instance?.PlaySwordSwing();
+
         // 攻击力只由基础值 + 技能树强化决定，不再随攻击次数累加
         int damage = StatsManager.Instance.playerDamage;
 

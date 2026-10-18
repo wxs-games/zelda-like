@@ -97,6 +97,10 @@ public class PlayerBow : MonoBehaviour
     public void Shoot()
     {
         if (shootTimer > 0) return;
+
+        // 弓弦声打在箭真正生成的这一帧，与画面同步
+        SoundManager.Instance?.PlayBowShoot();
+
         Arrow arrow=Instantiate(arrowPrefab, launchPoint.position, Quaternion.identity).GetComponent<Arrow>();
 
         // 生成时忽略箭与玩家自身的碰撞：发射点固定在身体一侧，
