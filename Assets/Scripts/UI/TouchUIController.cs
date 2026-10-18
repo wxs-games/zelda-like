@@ -53,6 +53,12 @@ public class TouchUIController : MonoBehaviour
     [Tooltip("切换武器按钮（剑↔弓）。没拿到弓之前灰置不可点——按了也没反应，灰置比点了没反应更清楚")]
     public GameObject changeWeaponButton;
 
+    [Tooltip("攻击键（触屏）。onClick 由运行时接线，见 HookTouchButtons")]
+    public GameObject attackButton;
+
+    [Tooltip("交互键（触屏，与 NPC 对话）。留空则不接线，交互只能靠键盘 F")]
+    public GameObject interactButton;
+
     [Tooltip("切换武器按钮灰置时的透明度")]
     [Range(0.1f, 1f)] public float lockedButtonAlpha = 0.35f;
 
@@ -70,48 +76,86 @@ public class TouchUIController : MonoBehaviour
     private Text _diagText;
     private float _diagTimer;
     private bool _changeButtonStateApplied;
-    private bool _changeWeaponHooked;
 
     /// <summary>
-    /// 给切换武器按钮挂上 Button.onClick → PlayerChangeEquipment.Toggle()。
+    /// 把所有触屏按键从「虚拟手柄」改接到「Unity UI onClick」。
     ///
-    /// 【为什么必须绕开 OnScreenButton 那条路——移动中失效的根因】
-    ///   ChangeBtn 原本挂 OnScreenButton 绑定 `<Gamepad>/rightShoulder`，
-    ///   GameInput.changeEquipment 也绑同一个键位。但摇杆的
-    ///   `<Gamepad>/leftStick`、攻击的 `<Gamepad>/buttonSouth`
-    ///   **共用同一个虚拟手柄设备**。Unity 虚拟手柄是共享状态：
-    ///   摇杆每帧写 leftStick → 设备每帧都有状态变化 →
-    ///   `WasPressedThisFrame()` 的边沿窗口被持续冲刷，
-    ///   于是**移动过程中点切换按钮没反应，静止时却正常**。
+    /// 【为什么必须全改，只改一个不够——上一轮的真实教训】
+    ///   上一轮只把 ChangeBtn 改成 onClick，用户复测仍然报「推摇杆时其他按钮点不动」。
+    ///   原因是攻击键（AttackBtn，OnScreenButton→`&lt;Gamepad&gt;/buttonSouth`）和
+    ///   交互键（InteractBtn，OnScreenButton→`&lt;Gamepad&gt;/buttonNorth`）
+    ///   **仍在写虚拟手柄**。这些 OnScreen 控件与摇杆共用同一个虚拟 Gamepad 设备，
+    ///   摇杆移动时每帧写 leftStick 让该设备持续产生状态变化，
+    ///   `WasPressedThisFrame()` 的边沿窗口被冲刷 → 按键无反应。
+    ///   只要还有一个按钮留在虚拟手柄上，这个 bug 就会以「那个按钮」的形式继续存在。
     ///
-    ///   改走 Unity UI 的 onClick 完全不经过虚拟手柄，两条通路互不干扰。
-    ///   PC 键鼠仍由 PlayerChangeEquipment.Update 读 GameInput，不受影响。
+    ///   现在：摇杆（FloatingOnScreenStick）也不再写虚拟手柄，改写 TouchInputBridge.Move。
+    ///   移动是「持续值」，不是「边沿」，原理上无法冲刷任何按键边沿——
+    ///   这是根治，而非逐个打补丁。
     ///
-    ///   用 bool 去重是因为 Unity 的 AddListener 无法移除，
-    ///   不去重会每帧叠加、点一下切好几次。
+    ///【为什么用 AddListener 而不用持久监听器】
+    ///   本方法在运行时挂载，而 Unity 的 AddListener 加的是**运行时监听器**，
+    ///   不会写进 prefab。但本项目里这层接线本来就依赖运行时状态
+    ///   （例如 ChangeBtn 要按 hasBow 决定是否可用），运行时接线反而更合适：
+    ///   prefab 保持干净，且改代码后无需重新配置 prefab。
+    ///   对比：MenuHubPanel 的「关闭Entry」用的是 prefab 持久监听器，
+    ///   那个必须持久化——因为它指向 MenuHubUI 自己的方法，语义上是 UI 的一部分。
+    ///
+    /// 【为什么要禁用 OnScreenButton 而不是留着】
+    ///   留着会出现「双通路重复响应」：一次点击既走 onClick 又写虚拟手柄，
+    ///   在 PC 上（键盘 K 同时可用）会导致一次按键触发两次攻击。
     /// </summary>
-    private void EnsureChangeWeaponClickHook()
-    {
-        if (changeWeaponButton == null || _changeWeaponHooked) return;
-        _changeWeaponHooked = true;
+    /// <summary>三个按键是否已接过 onClick，防止每帧重复 AddListener。</summary>
+    private bool _attackHooked, _changeWeaponHooked, _interactHooked;
 
-        var btn = changeWeaponButton.GetComponent<Button>();
+    private void HookTouchButtons()
+    {
+        if (!_attackHooked) HookButton(attackButton, () => TouchInputBridge.PressAttack());
+        if (!_changeWeaponHooked) HookButton(changeWeaponButton, () =>
+        {
+            var equip = FindObjectOfType<PlayerChangeEquipment>();
+            if (equip != null) equip.Toggle();
+        });
+        if (!_interactHooked) HookButton(interactButton, () => TouchInputBridge.PressInteract());
+
+        _attackHooked = attackButton != null;
+        _changeWeaponHooked = changeWeaponButton != null;
+        _interactHooked = interactButton != null;
+    }
+
+    /// <summary>给一个触屏按键挂 onClick，并禁掉它身上的 OnScreenButton（若有）。</summary>
+    private static void HookButton(GameObject go, UnityEngine.Events.UnityAction action)
+    {
+        if (go == null) return;
+
+        var btn = go.GetComponent<Button>();
         if (btn == null)
         {
-            btn = changeWeaponButton.AddComponent<Button>();
+            btn = go.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
-            var img = changeWeaponButton.GetComponent<Image>();
+            var img = go.GetComponent<Image>();
             if (img != null) btn.targetGraphic = img;
         }
+        btn.onClick.AddListener(action);
 
-        var equip = FindObjectOfType<PlayerChangeEquipment>();
-        if (equip == null)
-        {
-            Debug.LogWarning("[TouchUI] 未找到 PlayerChangeEquipment，切换武器按钮的触屏通路未挂上");
-            return;
-        }
-        btn.onClick.AddListener(() => equip.Toggle());
-        Debug.Log("[TouchUI] 切换武器按钮已改走 onClick 直连（不再经由虚拟手柄）");
+        // 屏蔽虚拟手柄通路，见 HookTouchButtons 的「为什么要禁用」一段
+        var onScreen = go.GetComponent<UnityEngine.InputSystem.OnScreen.OnScreenButton>();
+        if (onScreen != null) onScreen.enabled = false;
+    }
+
+    /// <summary>
+    ///帧末清除触屏的一次性按键标记。
+    ///
+    /// 【为什么必须放在 LateUpdate 而不是 Update】
+    ///   Unity 不保证脚本之间的 Update 顺序。若在 Update 里清除，而 TouchUIController
+    ///   的 Update 恰好早于玩家状态机的 Update 跑，就会把本帧的点击标记擦掉——
+    ///   症状是「按钮要偶发失灵」，且极难复现。
+    ///   LateUpdate 一定晚于本帧所有 Update，因此只要点击在本帧发生，
+    ///   玩家状态机（Update 中读取）就一定读得到。
+    /// </summary>
+    void LateUpdate()
+    {
+        TouchInputBridge.EndFrameClear();
     }
 
     /// <summary>被菜单等全屏面板挂起时为 true。见Suspend 的注释。</summary>
@@ -176,8 +220,8 @@ public class TouchUIController : MonoBehaviour
         // 切换武器按钮的可用性跟随弓箭解锁状态，与总显隐门控相互独立
         RefreshChangeWeaponButton();
 
-        // 切换武器的点击通路：见EnsureChangeWeaponClickHook 的注释
-        EnsureChangeWeaponClickHook();
+        // 触屏按键统一改走 onClick，见 HookTouchButtons 的注释
+        HookTouchButtons();
 
         if (logDecisionOnce && !_logged)
         {
@@ -281,11 +325,9 @@ public class TouchUIController : MonoBehaviour
         if (_changeButtonStateApplied == shouldInteract) return;
         _changeButtonStateApplied = shouldInteract;
 
-        // OnScreenButton 挂在同一个对象上时，关掉它才能真正屏蔽写入虚拟手柄的按键
-        var onScreen = changeWeaponButton.GetComponent<UnityEngine.InputSystem.OnScreen.OnScreenButton>();
-        if (onScreen != null) onScreen.enabled = shouldInteract;
-
         // 置灰：Image 调暗 + Button 不可交互
+        // 注意这里不要再动 OnScreenButton —— 触屏按键已统一改走 onClick，
+        // 虚拟手柄通路由 HookButton 一次性禁用，见 HookTouchButtons 的注释。
         var image = changeWeaponButton.GetComponent<Image>();
         if (image != null)
         {

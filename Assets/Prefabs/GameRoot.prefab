@@ -5311,6 +5311,8 @@ MonoBehaviour:
   controlsRoot: {fileID: 5251732788165006771}
   forceShow: 0
   changeWeaponButton: {fileID: 2761106106885745653}
+  attackButton: {fileID: 2696507877870789792}
+  interactButton: {fileID: 656918982423905055}
   lockedButtonAlpha: 0.35
   unlockedButtonAlpha: 1
   logDecisionOnce: 1

@@ -1,32 +1,33 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Layouts;   // InputControlAttribute 在此；不加会解析到抽象类 InputControl
-using UnityEngine.InputSystem.OnScreen;
 using UnityEngine.UI;
 
 /// <summary>
 /// 手机端虚拟摇杆（王者荣耀式常驻固定摇杆）。
 ///
-/// 【为什么不再继承 OnScreenStick 接管它的指针方法】
-/// 之前本类 `class FloatingOnScreenStick : OnScreenStick` 并用
-/// `new public void OnPointerDown(...)` 隐藏基类方法，实测真机「摇杆滚不动」。
-/// 原因是 Unity 的 EventSystem 通过
-/// `ExecuteEvents.GetEventHandler&lt;IPointerDownHandler&gt;()` **按接口**在组件列表上查找并调用。
-/// 基类 OnScreenStick 自身已实现 IPointerDownHandler/IDragHandler/IPointerUpHandler，
-/// 派生类用 `new` 隐藏**不会改变接口映射表**——EventSystem 调用的仍是
-/// **基类 OnScreenStick 的实现**，它按 `transform.parent` 算坐标、并直接改
-/// **transform 自身（JoystickZone）** 的 anchoredPosition。
-/// 于是常驻布局下整个触摸区被拖走，而我们维护的 visualRoot/knob 完全不动，看起来就是滚不动。
+/// 【架构变更：不再写虚拟手柄，输出改走 TouchInputBridge】
+///   旧实现继承 OnScreenControl，把值写进 `<Gamepad>/leftStick`。但攻击键
+///   （`<Gamepad>/buttonSouth`）、交互键（`<Gamepad>/buttonNorth`）也写在
+///   **同一个虚拟 Gamepad 设备**上，而 GameInput 读的是 `WasPressedThisFrame()`
+///   这种边沿量。摇杆移动时每帧写 leftStick → 该虚拟设备每帧都有状态变化 →
+///   边沿窗口被持续冲刷 → **推着摇杆时点其他按钮全部无反应，静止时却正常**。
+///   （上一轮只把 ChangeBtn 单独改成 onClick，攻击/交互仍走虚拟手柄，所以问题没消失。）
 ///
-/// 现方案：摇杆逻辑独立实现（仍继承 OnScreenControl，仅为复用 SendValueToControl
-/// 与虚拟设备注册），指针方法**不用 new 隐藏**，而是本类自己实现接口，
-/// 接口映射指向本类，行为完全可控。
+///   现方案：摇杆不再与 Input System 的虚拟设备通信，值写入
+///   TouchInputBridge.Move，由 GameInput.Move 与键盘输入合并。
+///   **移动操作从「写进共享设备的边沿源」变成「独立持续值」，
+///   原理上就不可能再冲刷任何按键的边沿。**
 ///
-/// 值写入 controlPath（&lt;Gamepad&gt;/leftStick），OnScreenControl 自动创建虚拟手柄设备，
-/// GameInput.Move（InputAction "Move"）直接可读。
+/// 【历史坑，保留说明：为什么不用 OnScreenStick 的指针方法】
+///   之前本类 `class FloatingOnScreenStick : OnScreenStick` 并用
+///   `new public void OnPointerDown(...)` 隐藏基类方法，实测真机「摇杆滚不动」。
+///   原因是 Unity 的 EventSystem 通过
+///   `ExecuteEvents.GetEventHandler<IPointerDownHandler>()` **按接口**在组件列表上查找并调用。
+///   基类 OnScreenStick 自身已实现 IPointerDownHandler/IDragHandler/IPointerUpHandler，
+///   派生类用 `new` 隐藏**不会改变接口映射表**。
+///   现方案：指针方法由本类自己实现接口，行为完全可控。
 /// </summary>
-public class FloatingOnScreenStick : OnScreenControl,
+public class FloatingOnScreenStick : MonoBehaviour,
     IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [Tooltip("摇杆视觉根（Base+Knob 容器）。常驻模式下启动即显示，不随松手隐藏")]
@@ -57,45 +58,16 @@ public class FloatingOnScreenStick : OnScreenControl,
     private Vector2 _pressScreenPos;
     private bool _pressed;
 
-    // 注意：movementRange 是 OnScreenStick 的属性，本类不再继承 OnScreenStick，
-    // 因此没有该成员，统一用自身的 maxKnobTravel。
     private float Travel => maxKnobTravel > 0f ? maxKnobTravel : 110f;
 
-    // 说明：OnScreenStick 用的是同样的写法——[InputControl(layout = "Vector2")]
-    // 标记 controlPath 字段，让 Input System 知道这个组件写的是 Vector2 类型的控件。
-    // 注意必须 using UnityEngine.InputSystem.Layouts，否则 [InputControl] 会解析到
-    // 同名的抽象类 InputControl 上，编译报 CS0653「不能应用抽象类特性」。
-    [InputControl(layout = "Vector2")]
-    [SerializeField]
-    private string m_ControlPath = "<Gamepad>/leftStick";
-
-    /// <summary>
-    /// OnScreenControl 的抽象成员。
-    ///
-    /// 【踩坑，务必保留自有字段】基类 public 属性 controlPath 的 getter/setter
-    /// 内部就是读写 controlPathInternal：
-    ///     public string controlPath { get => controlPathInternal; set { controlPathInternal = value; ... } }
-    /// 如果这里写成 `get => controlPath; set => controlPath = value;`
-    /// 就是**无限递归** → 栈溢出 → 游戏在初始化阶段直接黑屏（实测真机整屏黑、logcat 无任何 Unity 日志）。
-    /// 因此必须像 OnScreenStick 自己那样持有一份独立的序列化字段，绕开这层间接。
-    /// </summary>
-    protected override string controlPathInternal
+    void OnEnable()
     {
-        get => m_ControlPath;
-        set => m_ControlPath = value;
-    }
-
-    protected override void OnEnable()
-    {
-        base.OnEnable();
-
-        // 本方案不让基类移动 transform（我们只借 SendValueToControl），
         // 常驻模式下把底座立刻显示出来，玩家一眼知道「这里能拖」。
         if (!floatingMode && visualRoot != null)
             visualRoot.gameObject.SetActive(true);
 
         ApplyIdleLook();
-        Report($"OnEnable controlPath={controlPath} travel={Travel}");
+        Report($"OnEnable travel={Travel}");
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -124,7 +96,7 @@ public class FloatingOnScreenStick : OnScreenControl,
 
         if (knob != null) knob.anchoredPosition = Vector2.zero;
         ApplyPressedLook(true);
-        SendValueToControl(Vector2.zero);
+        TouchInputBridge.SetMove(Vector2.zero);
         Report($"PointerDown id={_pointerId} screen={_pressScreenPos}");
     }
 
@@ -151,7 +123,7 @@ public class FloatingOnScreenStick : OnScreenControl,
         Vector2 normalized = delta / travel;
         if (normalized.sqrMagnitude < 0.02f) normalized = Vector2.zero;
 
-        SendValueToControl(normalized);
+        TouchInputBridge.SetMove(normalized);
         Report($"Drag delta={delta} value={normalized}");
     }
 
@@ -165,22 +137,22 @@ public class FloatingOnScreenStick : OnScreenControl,
         _pressed = false;
 
         if (knob != null) knob.anchoredPosition = Vector2.zero;
-        SendValueToControl(Vector2.zero);
+        TouchInputBridge.SetMove(Vector2.zero);
         ApplyIdleLook();
 
         if (floatingMode && visualRoot != null)
             visualRoot.gameObject.SetActive(false);
     }
 
-    protected override void OnDisable()
+    void OnDisable()
     {
         _pointerId = -1;
         _pressed = false;
         if (knob != null) knob.anchoredPosition = Vector2.zero;
-        SendValueToControl(Vector2.zero);
+        // 控件被隐藏（暂停/对话/挂起）时必须清零，否则玩家松手后角色会一直朝最后方向走
+        TouchInputBridge.SetMove(Vector2.zero);
         if (floatingMode && visualRoot != null)
             visualRoot.gameObject.SetActive(false);
-        base.OnDisable();
     }
 
     private void ApplyIdleLook()
@@ -196,7 +168,6 @@ public class FloatingOnScreenStick : OnScreenControl,
     private void Report(string msg)
     {
         if (!verboseLog) return;
-        var ctl = control;   // m_Control 是基类 private 字段，只能走 public 的 control 属性
-        Debug.Log($"[Joystick] {msg} control={(ctl == null ? "NULL" : ctl.path)}");
+        Debug.Log($"[Joystick] {msg}");
     }
 }

@@ -24,7 +24,12 @@ public static class GameInput
 
     static GameInput()
     {
-        // 移动：WASD + 方向键 + 手柄左摇杆（虚拟摇杆通过 Gamepad 左摇杆位写入）
+        // 移动：WASD + 方向键 + 实体手柄左摇杆。
+        // 注意：**虚拟摇杆不再绑 <Gamepad>/leftStick**，它的值由 TouchInputBridge 单独提供。
+        // 原因见 TouchInputBridge 类注释：所有 OnScreen 控件共用同一个虚拟 Gamepad 设备，
+        // 摇杆每帧写 leftStick 会把该设备的状态变化拉满，导致同一设备上其他按钮
+        // （buttonSouth/buttonNorth）的 WasPressedThisFrame() 边沿窗口被持续冲刷，
+        // 表现为「推着摇杆时点任何按钮都没反应」。
         move = new InputAction("Move", InputActionType.Value, expectedControlType: "Vector2");
         move.AddCompositeBinding("2DVector")
             .With("Up", "<Keyboard>/w")
@@ -39,6 +44,9 @@ public static class GameInput
         move.AddBinding("<Gamepad>/leftStick");
 
         sprint = NewButton("Sprint", "<Keyboard>/leftShift", "<Gamepad>/leftShoulder");
+        // 攻击/交互的 <Gamepad>/buttonSouth / buttonNorth 绑定**保留**：
+        // 它们服务的是实体手柄（Switch Pro / Xbox 手柄的 A/B 键）。
+        // 触屏按键不再经由它们，而是由 TouchInputBridge 直接送标记（见 AttackPressed 属性）。
         attack = NewButton("Attack", "<Keyboard>/k", "<Gamepad>/buttonSouth");
         shoot = NewButton("Shoot", "<Keyboard>/j", "<Gamepad>/buttonWest");
         interact = NewButton("Interact", "<Keyboard>/f", "<Gamepad>/buttonNorth");
@@ -68,20 +76,39 @@ public static class GameInput
         return action;
     }
 
-    /// <summary>移动向量（2DVector 合成控件，已归一化）。</summary>
-    public static Vector2 Move => move.ReadValue<Vector2>();
+    /// <summary>
+    /// 移动向量。键盘/实体手柄的 InputAction 值与虚拟摇杆的 TouchInputBridge 值合并。
+    ///
+    /// 【为什么合并而不是二选一】
+    ///   手机上只有摇杆，PC 上只有键盘，理论上不会同时有值；但取二者之和并夹到单位圆内
+    ///   比「if 触屏非零则用触屏」更健壮——后者在某些设备上（如外接手柄 + 摇杆同时可用）
+    ///   会突然丢掉键盘输入。两者方向一致时和为 1，不会加速；
+    ///   ClampMagnitude 保证相反方向时不会叠加出 2 倍速度。
+    /// </summary>
+    public static Vector2 Move
+    {
+        get
+        {
+            Vector2 v = move.ReadValue<Vector2>() + TouchInputBridge.Move;
+            return v.sqrMagnitude > 1f ? v.normalized : v;
+        }
+    }
 
     /// <summary>冲刺是否按住。</summary>
     public static bool SprintHeld => sprint.IsPressed();
 
-    /// <summary>本帧按下挥剑。</summary>
-    public static bool AttackPressed => attack.WasPressedThisFrame();
+    /// <summary>
+    /// 本帧按下挥剑。合并「键盘 K / 实体手柄 buttonSouth」与「触屏攻击键 onClick」两条通路。
+    /// </summary>
+    public static bool AttackPressed => attack.WasPressedThisFrame() || TouchInputBridge.AttackPressed;
 
-    /// <summary>本帧按下射箭。</summary>
+    /// <summary>本帧按下射箭（PC J 键 / 手柄 buttonWest，触屏无独立射箭键——攻击键按装备分派）。</summary>
     public static bool ShootPressed => shoot.WasPressedThisFrame();
 
-    /// <summary>本帧按下交互。</summary>
-    public static bool InteractPressed => interact.WasPressedThisFrame();
+    /// <summary>
+    /// 本帧按下交互。合并「键盘 F / 实体手柄 buttonNorth」与「触屏交互键 onClick」两条通路。
+    /// </summary>
+    public static bool InteractPressed => interact.WasPressedThisFrame() || TouchInputBridge.InteractPressed;
 
     /// <summary>本帧按下切换武器。</summary>
     public static bool ChangeEquipmentPressed => changeEquipment.WasPressedThisFrame();
