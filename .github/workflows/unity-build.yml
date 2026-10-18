@@ -1,0 +1,206 @@
+# Unity 流水线（game-ci/unity-builder）
+#
+# 设计要点
+# 1. **双 job 分层**，按依赖强度拆分，让反馈速度差一个数量级：
+#    - `compile-check`：每次 push/PR 都跑，只做「打开工程 + 编译脚本」，不打包。
+#      1~2 分钟出结果，能抓住绝大多数 CS 编译错误。
+#    - `build-apk`：只在手动触发（workflow_dispatch）时跑，完整出包 + 归档产物。
+#      完整 IL2CPP 出包要 3~6 分钟，不该每次提交都烧。
+# 2. **中国版 Unity 的授权问题**：
+#    本工程用 2021.3.45f2c1（2021.3/china_unity/release 分支），而 game-ci 的许可
+#    激活流程是按国际版设计的，能否激活未经验证。若仓库没配 UNITY_* secrets，
+#    compile-check 会被 `if` 条件跳过而不是变红，workflow 不会因此误导人。
+#    若你后续配了自建的 Unity Licensing Server，用 `unityLicensingServer` 输入接上。
+# 3. **Library 缓存**：Unity 冷编译极慢，缓存 Library 是收益最高的一项优化。
+# 4. 参数名严格对齐 unity-builder 的 action.yml（targetPlatform 是必填项，不能省）。
+
+name: Unity Build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'Docs/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # 同一分支的新 push 取消上一次未完成的构建，省 Actions 配额
+  group: unity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------
+  # 作业一：编译检查。需要许可证；没配 secrets 时整体跳过。
+  # ------------------------------------------------------------------
+  compile-check:
+    name: 编译检查
+    # 没有 Unity 许可证就跑不了（Unity 启动即校验授权）。
+    # 显式跳过而不是让它红掉——避免变成一个「看起来坏了其实只是缺配置」的哨兵。
+    if: ${{ secrets.UNITY_LICENSE != '' || secrets.UNITY_EMAIL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 检出代码（含 LFS 美术资源）
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: 校验工程结构
+        run: |
+          set -e
+          # 工程在仓库根下的 zeldaLike/zeldaLike/，不是仓库根
+          if [ ! -f "zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt" ]; then
+            echo "::error::找不到 ProjectVersion.txt，projectPath 可能配错了"
+            find . -name ProjectVersion.txt -not -path "./.git/*" | head -5
+            exit 1
+          fi
+          echo "工程版本：$(head -1 zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt)"
+
+      - name: 缓存 Unity Library
+        uses: actions/cache@v4
+        with:
+          path: zeldaLike/zeldaLike/Library
+          key: unity-lib-check-${{ hashFiles('zeldaLike/zeldaLike/Packages/manifest.json', 'zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            unity-lib-check-
+
+      - name: 打开工程并编译脚本
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_LICENSING_SERVER: ${{ secrets.UNITY_LICENSING_SERVER }}
+        with:
+          projectPath: zeldaLike/zeldaLike
+          unityVersion: 2021.3.45f2c1
+          # buildMethod 留空 => 只启动工程并完成脚本编译，不执行 BuildPipeline
+          targetPlatform: Android
+          customParameters: -quit -nographics -logFile -
+          unityLicensingServer: ${{ secrets.UNITY_LICENSING_SERVER }}
+
+      - name: 汇总结果
+        if: always()
+        run: |
+          if [ "${{ job.status }}" != "success" ]; then
+            echo "::error title=编译失败::脚本编译未通过，请在上方步骤日志里找 error CS 编号"
+          else
+            echo "::notice title=编译通过::脚本编译无错误"
+          fi
+
+  # ------------------------------------------------------------------
+  # 作业二：完整出 APK。仅手动触发时运行。
+  # ------------------------------------------------------------------
+  build-apk:
+    name: 出 Android APK
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: 检出代码（含 LFS 美术资源）
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: 校验工程结构
+        run: |
+          test -f "zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt" \
+            || { echo "::error::projectPath 配错"; exit 1; }
+
+      - name: 缓存 Unity Library
+        uses: actions/cache@v4
+        with:
+          path: zeldaLike/zeldaLike/Library
+          key: unity-lib-apk-${{ hashFiles('zeldaLike/zeldaLike/Packages/manifest.json', 'zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            unity-lib-apk-
+
+      - name: 出 APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_LICENSING_SERVER: ${{ secrets.UNITY_LICENSING_SERVER }}
+        with:
+          projectPath: zeldaLike/zeldaLike
+          unityVersion: 2021.3.45f2c1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          # 复用工程里已有的出包入口 BuildScript.BuildApkBatch。
+          # 它已经处理了版本号递增、图形 API 校验、场景列表等一堆前置检查，
+          # 不要另起一套，否则两边逻辑会漂移。
+          buildMethod: BuildScript.BuildApkBatch
+          manualExit: true
+          customParameters: -logFile -
+          unityLicensingServer: ${{ secrets.UNITY_LICENSING_SERVER }}
+          # 正式签名（可选）：没配 secrets 时这几项为空，Unity 会继续用 debug keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+
+      - name: 上传 APK 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: zeldalike-apk
+          # BuildScript.ResolveBuildPath 用 Path.Combine(Application.dataPath, "../Builds")，
+          # dataPath 是 <工程根>/Assets，所以产物落在工程根下的 Builds/，不是仓库根。
+          path: zeldaLike/zeldaLike/Builds/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: 打印出包日志摘要
+        if: always()
+        run: |
+          grep -aE "\[Build\]|\[BuildCli\]" zeldaLike/zeldaLike/Logs/*.log 2>/dev/null | tail -40 || \
+          echo "（未找到 Logs/cli-build.log，出包日志可能在 action 输出里）"
+
+  # ------------------------------------------------------------------
+  # 作业三：没配 Unity 许可证时的降级检查。
+  # 用纯文本扫描兜住最容易犯的错误（IDE 自动补全误导入 UnityEditor 命名空间，
+  # 这个在 Android 构建时会 CS0234 失败，但本地编辑器不报错）。
+  # ------------------------------------------------------------------
+  static-guard:
+    name: 静态规范检查（无需许可证）
+    if: ${{ secrets.UNITY_LICENSE == '' && secrets.UNITY_EMAIL == '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 检查运行时代码是否泄漏 UnityEditor 引用
+        run: |
+          set -e
+          # Assets/Scripts/Editor/ 是编辑器程序集，允许引用 UnityEditor；
+          # 其余目录一旦出现 UnityEditor 引用，Android 构建必然 CS0234 失败。
+          hits=$(grep -rn "using UnityEditor\|UnityEditor\." zeldaLike/zeldaLike/Assets/Scripts \
+                 --include="*.cs" \
+                 --exclude-dir=Editor 2>/dev/null || true)
+          if [ -n "$hits" ]; then
+            echo "::error title=运行时代码泄漏 UnityEditor 引用::Android 构建会报 CS0234，请把这些引用挪进 Editor 子目录"
+            echo "$hits"
+            exit 1
+          fi
+          echo "::notice title=检查通过::运行时代码未引用 UnityEditor"
+
+      - name: 检查 LFS 大文件是否真的进了 LFS
+        run: |
+          # 355 个 png 走 LFS，若误提交成实体会让仓库体积暴涨且 Unity 拉到的是指针文件
+          big=$(find zeldaLike/zeldaLike/Assets -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.wav" \) \
+                -size +1M -not -path "*/Library/*" 2>/dev/null | head -5 || true)
+          if [ -n "$big" ]; then
+            echo "::warning::发现未走 LFS 的大文件（如果是意外提交，请执行 git lfs migrate import）："
+            echo "$big"
+          else
+            echo "::notice title=检查通过::未发现未走 LFS 的大资源"
+          fi

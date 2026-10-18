@@ -1,0 +1,25 @@
+{
+  "maps": [
+    {
+      "name": "UI",
+      "id": "0f6a1c2e-8b3d-4a51-9c77-2d5e8f0a1b34",
+      "actions": [
+        { "name": "Point", "type": "PassThrough", "id": "1a2b3c4d-0001-4e5f-8a9b-0c1d2e3f4a5b", "expectedControlType": "Pointer", "processors": "", "interactions": "", "initialStateCheck": true },
+        { "name": "Click", "type": "PassThrough", "id": "1a2b3c4d-0002-4e5f-8a9b-0c1d2e3f4a5b", "expectedControlType": "Pointer", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "ScrollWheel", "type": "PassThrough", "id": "1a2b3c4d-0003-4e5f-8a9b-0c1d2e3f4a5b", "expectedControlType": "Scroll", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "MiddleClick", "type": "PassThrough", "id": "1a2b3c4d-0004-4e5f-8a9b-0c1d2e3f4a5b", "expectedControlType": "Pointer", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "RightClick", "type": "PassThrough", "id": "1a2b3c4d-0005-4e5f-8a9b-0c1d2e3f4a5b", "expectedControlType": "Pointer", "processors": "", "interactions": "", "initialStateCheck": false }
+      ],
+      "bindings": [
+        { "name": "", "id": "2b3c4d5e-0001-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "", "action": "Point", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0002-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Touchscreen>/position", "interactions": "", "processors": "", "groups": "", "action": "Point", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0003-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "", "action": "Click", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0004-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Touchscreen>/primaryTouch/press", "interactions": "", "processors": "", "groups": "", "action": "Click", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0005-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/scroll", "interactions": "", "processors": "", "groups": "", "action": "ScrollWheel", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0006-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/middleButton", "interactions": "", "processors": "", "groups": "", "action": "MiddleClick", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "2b3c4d5e-0007-4e5f-8a9b-0c1d2e3f4a5b", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "", "action": "RightClick", "isComposite": false, "isPartOfComposite": false }
+      ]
+    }
+  ],
+  "controlSchemes": []
+}
