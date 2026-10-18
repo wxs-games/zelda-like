@@ -40,7 +40,7 @@ public class TouchUIController : MonoBehaviour
     public bool logDecisionOnce = true;
 
     [Tooltip("把门控判定明细画在屏幕左上角（真机排障用，不依赖 logcat，排完记得关）")]
-    public bool showOnScreenDiagnostics = true;
+    public bool showOnScreenDiagnostics = false;
 
     private bool _logged;
     private Text _diagText;

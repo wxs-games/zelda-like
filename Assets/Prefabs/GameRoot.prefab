@@ -5309,7 +5309,7 @@ MonoBehaviour:
   controlsRoot: {fileID: 5251732788165006771}
   forceShow: 0
   logDecisionOnce: 1
-  showOnScreenDiagnostics: 1
+  showOnScreenDiagnostics: 0
 --- !u!1 &2682321077191413757
 GameObject:
   m_ObjectHideFlags: 0
