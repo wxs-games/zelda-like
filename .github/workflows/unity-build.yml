@@ -52,19 +52,19 @@ jobs:
       - name: 校验工程结构
         run: |
           set -e
-          # 工程在仓库根下的 zeldaLike/zeldaLike/，不是仓库根
-          if [ ! -f "zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt" ]; then
+          # 仓库根就是 Unity 工程根（Assets/、ProjectSettings/ 都在顶层）
+          if [ ! -f "ProjectSettings/ProjectVersion.txt" ]; then
             echo "::error::找不到 ProjectVersion.txt，projectPath 可能配错了"
             find . -name ProjectVersion.txt -not -path "./.git/*" | head -5
             exit 1
           fi
-          echo "工程版本：$(head -1 zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt)"
+          echo "工程版本：$(head -1 ProjectSettings/ProjectVersion.txt)"
 
       - name: 缓存 Unity Library
         uses: actions/cache@v4
         with:
-          path: zeldaLike/zeldaLike/Library
-          key: unity-lib-check-${{ hashFiles('zeldaLike/zeldaLike/Packages/manifest.json', 'zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt') }}
+          path: Library
+          key: unity-lib-check-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}
           restore-keys: |
             unity-lib-check-
 
@@ -77,7 +77,7 @@ jobs:
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
           UNITY_LICENSING_SERVER: ${{ secrets.UNITY_LICENSING_SERVER }}
         with:
-          projectPath: zeldaLike/zeldaLike
+          projectPath: .
           unityVersion: 2021.3.45f2c1
           # buildMethod 留空 => 只启动工程并完成脚本编译，不执行 BuildPipeline
           targetPlatform: Android
@@ -110,14 +110,14 @@ jobs:
 
       - name: 校验工程结构
         run: |
-          test -f "zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt" \
+          test -f "ProjectSettings/ProjectVersion.txt" \
             || { echo "::error::projectPath 配错"; exit 1; }
 
       - name: 缓存 Unity Library
         uses: actions/cache@v4
         with:
-          path: zeldaLike/zeldaLike/Library
-          key: unity-lib-apk-${{ hashFiles('zeldaLike/zeldaLike/Packages/manifest.json', 'zeldaLike/zeldaLike/ProjectSettings/ProjectVersion.txt') }}
+          path: Library
+          key: unity-lib-apk-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}
           restore-keys: |
             unity-lib-apk-
 
@@ -130,7 +130,7 @@ jobs:
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
           UNITY_LICENSING_SERVER: ${{ secrets.UNITY_LICENSING_SERVER }}
         with:
-          projectPath: zeldaLike/zeldaLike
+          projectPath: .
           unityVersion: 2021.3.45f2c1
           targetPlatform: Android
           androidExportType: androidPackage
@@ -153,14 +153,14 @@ jobs:
           name: zeldalike-apk
           # BuildScript.ResolveBuildPath 用 Path.Combine(Application.dataPath, "../Builds")，
           # dataPath 是 <工程根>/Assets，所以产物落在工程根下的 Builds/，不是仓库根。
-          path: zeldaLike/zeldaLike/Builds/*.apk
+          path: Builds/*.apk
           retention-days: 30
           if-no-files-found: error
 
       - name: 打印出包日志摘要
         if: always()
         run: |
-          grep -aE "\[Build\]|\[BuildCli\]" zeldaLike/zeldaLike/Logs/*.log 2>/dev/null | tail -40 || \
+          grep -aE "\[Build\]|\[BuildCli\]" Logs/*.log 2>/dev/null | tail -40 || \
           echo "（未找到 Logs/cli-build.log，出包日志可能在 action 输出里）"
 
   # ------------------------------------------------------------------
@@ -175,15 +175,17 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: 检出代码
+      - name: 检出代码（必须带 LFS，否则大资源是几十字节的指针文件）
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: 检查运行时代码是否泄漏 UnityEditor 引用
         run: |
           set -e
           # Assets/Scripts/Editor/ 是编辑器程序集，允许引用 UnityEditor；
           # 其余目录一旦出现 UnityEditor 引用，Android 构建必然 CS0234 失败。
-          hits=$(grep -rn "using UnityEditor\|UnityEditor\." zeldaLike/zeldaLike/Assets/Scripts \
+          hits=$(grep -rn "using UnityEditor\|UnityEditor\." Assets/Scripts \
                  --include="*.cs" \
                  --exclude-dir=Editor 2>/dev/null || true)
           if [ -n "$hits" ]; then
@@ -196,7 +198,7 @@ jobs:
       - name: 检查 LFS 大文件是否真的进了 LFS
         run: |
           # 355 个 png 走 LFS，若误提交成实体会让仓库体积暴涨且 Unity 拉到的是指针文件
-          big=$(find zeldaLike/zeldaLike/Assets -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.wav" \) \
+          big=$(find Assets -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.wav" \) \
                 -size +1M -not -path "*/Library/*" 2>/dev/null | head -5 || true)
           if [ -n "$big" ]; then
             echo "::warning::发现未走 LFS 的大文件（如果是意外提交，请执行 git lfs migrate import）："
