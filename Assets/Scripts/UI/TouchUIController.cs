@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Utilities;   // InternedString 所在命名空间
 
 /// <summary>
 /// 触屏控件显隐门控：
