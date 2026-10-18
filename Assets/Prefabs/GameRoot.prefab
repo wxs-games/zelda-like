@@ -646,18 +646,18 @@ MonoBehaviour:
   m_MoveRepeatRate: 0.1
   m_XRTrackingOrigin: {fileID: 0}
   m_ActionsAsset: {fileID: -944628639613478452, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
-  m_PointAction: {fileID: 0}
-  m_MoveAction: {fileID: 0}
+  m_PointAction: {fileID: -3627864553116282443, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
+  m_MoveAction: {fileID: -3627864553116282443, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
   m_SubmitAction: {fileID: 0}
   m_CancelAction: {fileID: 0}
-  m_LeftClickAction: {fileID: 0}
-  m_MiddleClickAction: {fileID: 0}
-  m_RightClickAction: {fileID: 0}
-  m_ScrollWheelAction: {fileID: 0}
+  m_LeftClickAction: {fileID: -5635289842557280194, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
+  m_MiddleClickAction: {fileID: -770685115805167440, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
+  m_RightClickAction: {fileID: -6892239452640057889, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
+  m_ScrollWheelAction: {fileID: -6634227309330445716, guid: b27b9ca857b1b2e43bba1f4db4e2a6f6, type: 3}
   m_TrackedDevicePositionAction: {fileID: 0}
   m_TrackedDeviceOrientationAction: {fileID: 0}
   m_DeselectOnBackgroundClick: 1
-  m_PointerBehavior: 0
+  m_PointerBehavior: 2
   m_CursorLockBehavior: 0
 --- !u!1 &420918286
 GameObject:
@@ -5008,15 +5008,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79dfbc694535d744a802efb40cb15020, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MovementRange: 50
-  m_ControlPath: <Gamepad>/leftStick
   visualRoot: {fileID: 4532194100661810429}
   knob: {fileID: 2252809571363549455}
   baseImage: {fileID: 4232334281903668799}
   idleColor: {r: 1, g: 1, b: 1, a: 0.3}
   pressedColor: {r: 1, g: 1, b: 1, a: 0.6}
-  floatingMode: 0
   maxKnobTravel: 110
+  floatingMode: 0
+  verboseLog: 0
+  m_ControlPath: <Gamepad>/leftStick
 --- !u!1 &2277772422715519987
 GameObject:
   m_ObjectHideFlags: 0
