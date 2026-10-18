@@ -35,6 +35,15 @@ public static class TouchInputBridge
     /// <summary>交互键本帧是否被按下（触屏通路）。</summary>
     public static bool InteractPressed { get; private set; }
 
+    // 【为什么要记帧号而不是直接清】Unity 不保证脚本 Update 顺序。
+    // 若玩家状态机的 Update 排在 EventSystem.Update() 之前，则本帧的点击
+    // 是在玩家已经跑完之后才置位的；如果 LateUpdate 立刻清掉，玩家下一帧就再也读不到
+    // → 表现为「点击偶发失灵」，且与帧率/脚本加载顺序相关，极难复现。
+    // 修法：记录置位时的帧号，LateUpdate 只在「已经跨过一帧」后才清，
+    // 保证任何执行顺序下，至少有一个完整的 Update 周期能读到该标记。
+    private static int _attackSetFrame = -1;
+    private static int _interactSetFrame = -1;
+
     // 摇杆归位时也会调一次，确保松手后不会残留上一帧的方向
     public static void SetMove(Vector2 value)
     {
@@ -44,23 +53,25 @@ public static class TouchInputBridge
     public static void PressAttack()
     {
         AttackPressed = true;
+        _attackSetFrame = Time.frameCount;
     }
 
     public static void PressInteract()
     {
         InteractPressed = true;
+        _interactSetFrame = Time.frameCount;
     }
 
     /// <summary>
-    /// 帧末清除一次性标记。
-    /// 必须由 TouchUIController 在 LateUpdate 调用——Unity 不保证脚本 Update 顺序，
-    /// 只有 LateUpdate 一定晚于所有 Update，才能保证玩家状态机（Update 里读）
-    /// 本帧一定读得到本帧的点击。
+    /// 帧末清除一次性标记（由 TouchUIController 在 LateUpdate 调用）。
+    ///
+    /// 只清除「在上一帧或更早」置位的标记：本帧刚置位的标记会保留到下一帧，
+    /// 从而保证无论脚本 Update 顺序如何，玩家状态机都一定有一个完整周期读到它。
     /// </summary>
     public static void EndFrameClear()
     {
-        AttackPressed = false;
-        InteractPressed = false;
+        if (_attackSetFrame < Time.frameCount) AttackPressed = false;
+        if (_interactSetFrame < Time.frameCount) InteractPressed = false;
     }
 
     /// <summary>进入 Play 时清空，避免编辑器里残留上一次运行的标记。</summary>
@@ -70,5 +81,7 @@ public static class TouchInputBridge
         Move = Vector2.zero;
         AttackPressed = false;
         InteractPressed = false;
+        _attackSetFrame = -1;
+        _interactSetFrame = -1;
     }
 }

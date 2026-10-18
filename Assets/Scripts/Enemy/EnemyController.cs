@@ -20,6 +20,13 @@ public class EnemyController : MonoBehaviour
     [HideInInspector] public int patrolIndex;
     [HideInInspector] public float patrolWait;
 
+    /// <summary>
+    /// 进入攻击状态的时刻，供 AttackState 的看门狗使用。
+    /// 必须放在敌人自己身上而不是 AttackState 单例里——单例是所有敌人共享的，
+    /// 多只敌人同时攻击时会互相覆盖计时。
+    /// </summary>
+    [HideInInspector] public float attackEnterTime;
+
     private StateMachine<EnemyController> enemyStateMachine;
     private EnemyState currentStateEnum;
 
