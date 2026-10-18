@@ -29,6 +29,21 @@ using UnityEngine.UI;
 /// </summary>
 public class TouchUIController : MonoBehaviour
 {
+    /// <summary>当前活动的实例。菜单面板等外部系统需要挂起触屏控件时从这里取，
+    /// 避免每次开关都做一次全场 FindObjectOfType。</summary>
+    public static TouchUIController Active
+    {
+        get
+        {
+            if (_active != null && _active.isActiveAndEnabled) return _active;
+            // 静态字段可能在域重载后为 null（Awake 不重跑），此时回退一次查找
+            _active = FindObjectOfType<TouchUIController>();
+            return _active;
+        }
+    }
+
+    private static TouchUIController _active;
+
     [Tooltip("触屏控件根（摇杆区+按钮簇+菜单按钮）")]
     public GameObject controlsRoot;
 
@@ -55,6 +70,102 @@ public class TouchUIController : MonoBehaviour
     private Text _diagText;
     private float _diagTimer;
     private bool _changeButtonStateApplied;
+    private bool _changeWeaponHooked;
+
+    /// <summary>
+    /// 给切换武器按钮挂上 Button.onClick → PlayerChangeEquipment.Toggle()。
+    ///
+    /// 【为什么必须绕开 OnScreenButton 那条路——移动中失效的根因】
+    ///   ChangeBtn 原本挂 OnScreenButton 绑定 `<Gamepad>/rightShoulder`，
+    ///   GameInput.changeEquipment 也绑同一个键位。但摇杆的
+    ///   `<Gamepad>/leftStick`、攻击的 `<Gamepad>/buttonSouth`
+    ///   **共用同一个虚拟手柄设备**。Unity 虚拟手柄是共享状态：
+    ///   摇杆每帧写 leftStick → 设备每帧都有状态变化 →
+    ///   `WasPressedThisFrame()` 的边沿窗口被持续冲刷，
+    ///   于是**移动过程中点切换按钮没反应，静止时却正常**。
+    ///
+    ///   改走 Unity UI 的 onClick 完全不经过虚拟手柄，两条通路互不干扰。
+    ///   PC 键鼠仍由 PlayerChangeEquipment.Update 读 GameInput，不受影响。
+    ///
+    ///   用 bool 去重是因为 Unity 的 AddListener 无法移除，
+    ///   不去重会每帧叠加、点一下切好几次。
+    /// </summary>
+    private void EnsureChangeWeaponClickHook()
+    {
+        if (changeWeaponButton == null || _changeWeaponHooked) return;
+        _changeWeaponHooked = true;
+
+        var btn = changeWeaponButton.GetComponent<Button>();
+        if (btn == null)
+        {
+            btn = changeWeaponButton.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            var img = changeWeaponButton.GetComponent<Image>();
+            if (img != null) btn.targetGraphic = img;
+        }
+
+        var equip = FindObjectOfType<PlayerChangeEquipment>();
+        if (equip == null)
+        {
+            Debug.LogWarning("[TouchUI] 未找到 PlayerChangeEquipment，切换武器按钮的触屏通路未挂上");
+            return;
+        }
+        btn.onClick.AddListener(() => equip.Toggle());
+        Debug.Log("[TouchUI] 切换武器按钮已改走 onClick 直连（不再经由虚拟手柄）");
+    }
+
+    /// <summary>被菜单等全屏面板挂起时为 true。见Suspend 的注释。</summary>
+    private bool _suspended;
+    private bool _suspendApplied;
+
+    void Awake()
+    {
+        _active = this;
+    }
+
+    void OnDestroy()
+    {
+        if (_active == this) _active = null;
+    }
+
+    /// <summary>
+    /// 挂起/恢复触屏控件的射线响应（不隐藏控件本身）。
+    ///
+    /// 【为什么需要】
+    ///   菜单中枢面板 MenuHubPanel 挂在同一个 TouchCanvas 下、位于 SafeAreaRoot 的
+    ///   后一个兄弟节点（绘制在上层），矩形铺满全屏。它展开后 blocksRaycasts=true，
+    ///   会把摇杆、攻击键、切换键、菜单键全部盖住。
+    ///   而关闭菜单的唯一入口就是右上角那个菜单键——正被它自己盖着，于是死锁：
+    ///   **菜单一开就再也关不掉**。
+    ///
+    /// 【为什么只关射线而不是 SetActive(false)】
+    ///   隐藏后玩家看不到摇杆和按键，会以为游戏卡死或触控失灵。
+    ///   保留可见但不可点，玩家能明确感知「现在要点菜单里的东西」。
+    ///
+    /// 【为什么用 CanvasGroup.blocksRaycasts 而不是逐个 Image.raycastTarget】
+    ///   一个 CanvasGroup 开关整棵子树，O(1) 操作，且能在关闭时精确还原
+    ///   （逐个改 raycastTarget 需要自己缓存原值，忘了还原就是新的坑）。
+    /// </summary>
+    public void Suspend(bool suspended)
+    {
+        if (_suspended == suspended && _suspendApplied) return;
+        _suspended = suspended;
+        ApplySuspend();
+    }
+
+    private void ApplySuspend()
+    {
+        if (controlsRoot == null) return;
+        _suspendApplied = true;
+
+        var group = controlsRoot.GetComponent<CanvasGroup>();
+        if (group == null) group = controlsRoot.AddComponent<CanvasGroup>();
+
+        // blocksRaycasts 拦射线（谁被点到），interactable 拦控件自身响应，
+        // 两者都要关，否则 Button 仍会响应 OnScreenButton 写入的虚拟按键。
+        group.blocksRaycasts = !_suspended;
+        group.interactable = !_suspended;
+    }
 
     void Update()
     {
@@ -64,6 +175,9 @@ public class TouchUIController : MonoBehaviour
 
         // 切换武器按钮的可用性跟随弓箭解锁状态，与总显隐门控相互独立
         RefreshChangeWeaponButton();
+
+        // 切换武器的点击通路：见EnsureChangeWeaponClickHook 的注释
+        EnsureChangeWeaponClickHook();
 
         if (logDecisionOnce && !_logged)
         {
@@ -76,7 +190,11 @@ public class TouchUIController : MonoBehaviour
         }
 
         if (controlsRoot.activeSelf != should)
+        {
             controlsRoot.SetActive(should);
+            // 控件被整体隐藏再显示时，挂起标记需要重新落到刚启用的对象上
+            if (should) ApplySuspend();
+        }
 
         // 屏幕诊断：每 0.25 秒刷新一次，避免每帧重建字符串。
         if (showOnScreenDiagnostics)
