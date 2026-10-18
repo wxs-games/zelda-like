@@ -6,6 +6,8 @@ public class AttackState : IEnemyState
 
     public void OnEnter(EnemyController e)
     {
+        // 攻击时停下跑动帧，避免叠加播放
+        e.anim.SetBool("isMoving", false);
         e.anim.SetBool("isAttacking", true);
     }
 

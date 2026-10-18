@@ -7,6 +7,7 @@ public class IdleState : IEnemyState
     public void OnEnter(EnemyController e)
     {
         e.anim.SetBool("isIdle", true);
+        e.anim.SetBool("isMoving", false);
     }
 
     public void OnUpdate(EnemyController e)

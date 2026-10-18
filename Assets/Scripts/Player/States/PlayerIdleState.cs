@@ -13,13 +13,26 @@ public class PlayerIdleState : IPlayerState
 
     public void OnUpdate(PlayerController p)
     {
-        if (GameInput.AttackPressed && p.playerCombat.enabled && p.playerCombat.CanAttack())
+        // 手游只有一个攻击键：按当前装备分派——拿剑就砍，拿弓就射。
+        // PC 端仍可用独立的 J 键直接射击，方便调试和手柄玩家。
+        if (GameInput.AttackPressed)
         {
-            p.ChangeState(PlayerAttackState.Instance);
-            return;
+            if (p.playerBow.enabled)
+            {
+                // 范围内没有敌人时不进入射击状态，按键不消耗冷却
+                if (p.playerBow.CanShoot() && p.playerBow.HasEnemyInRange())
+                {
+                    p.ChangeState(PlayerShootState.Instance);
+                    return;
+                }
+            }
+            else if (p.playerCombat.enabled && p.playerCombat.CanAttack())
+            {
+                p.ChangeState(PlayerAttackState.Instance);
+                return;
+            }
         }
 
-        // 范围内没有敌人时不进入射击状态，按键不消耗冷却
         if (GameInput.ShootPressed && p.playerBow.enabled && p.playerBow.CanShoot() && p.playerBow.HasEnemyInRange())
         {
             p.ChangeState(PlayerShootState.Instance);

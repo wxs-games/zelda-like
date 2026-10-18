@@ -35,6 +35,15 @@ public class TouchUIController : MonoBehaviour
     [Tooltip("PC/编辑器强制显示触屏控件（预览测试与真机排障用）")]
     public bool forceShow;
 
+    [Tooltip("切换武器按钮（剑↔弓）。没拿到弓之前灰置不可点——按了也没反应，灰置比点了没反应更清楚")]
+    public GameObject changeWeaponButton;
+
+    [Tooltip("切换武器按钮灰置时的透明度")]
+    [Range(0.1f, 1f)] public float lockedButtonAlpha = 0.35f;
+
+    [Tooltip("切换武器按钮正常时的透明度")]
+    [Range(0.1f, 1f)] public float unlockedButtonAlpha = 1f;
+
     /// <summary>输出一次门控判定明细，便于真机用 logcat 定位「控件不显示」的原因。</summary>
     [Tooltip("输出一次门控判定日志（真机排障用，正常发布可关闭）")]
     public bool logDecisionOnce = true;
@@ -45,12 +54,16 @@ public class TouchUIController : MonoBehaviour
     private bool _logged;
     private Text _diagText;
     private float _diagTimer;
+    private bool _changeButtonStateApplied;
 
     void Update()
     {
         if (controlsRoot == null) return;
 
         bool should = ShouldShow();
+
+        // 切换武器按钮的可用性跟随弓箭解锁状态，与总显隐门控相互独立
+        RefreshChangeWeaponButton();
 
         if (logDecisionOnce && !_logged)
         {
@@ -127,6 +140,54 @@ public class TouchUIController : MonoBehaviour
     }
 
     private static string Mark(bool pass) => pass ? "[OK] " : "[XX] ";
+
+    /// <summary>
+    /// 切换武器按钮（剑↔弓）的解锁状态刷新。
+    ///
+    /// 【为什么要做】
+    /// 射箭按钮已按手游惯例删除，攻击键按当前装备自动分派。此时「切换武器」成了
+    /// 玩家进入弓箭状态的唯一入口——没弓时它是个死按钮。
+    /// 原先既不隐藏也不置灰，玩家点了毫无反应却看不出原因，因此这里按 hasBow
+    /// 实时置灰+ 调暗，让「还没解锁」一眼可见。
+    ///
+    /// 只在状态真正变化时写属性，避免每帧刷 CanvasRenderer 造成不必要的重建。
+    /// </summary>
+    private void RefreshChangeWeaponButton()
+    {
+        if (changeWeaponButton == null) return;
+
+        var stats = StatsManager.GetActive();
+        bool unlocked = stats != null && stats.hasBow;
+        bool shouldInteract = unlocked;
+
+        if (_changeButtonStateApplied == shouldInteract) return;
+        _changeButtonStateApplied = shouldInteract;
+
+        // OnScreenButton 挂在同一个对象上时，关掉它才能真正屏蔽写入虚拟手柄的按键
+        var onScreen = changeWeaponButton.GetComponent<UnityEngine.InputSystem.OnScreen.OnScreenButton>();
+        if (onScreen != null) onScreen.enabled = shouldInteract;
+
+        // 置灰：Image 调暗 + Button 不可交互
+        var image = changeWeaponButton.GetComponent<Image>();
+        if (image != null)
+        {
+            var c = image.color;
+            c.a = unlocked ? unlockedButtonAlpha : lockedButtonAlpha;
+            image.color = c;
+        }
+
+        var button = changeWeaponButton.GetComponent<Button>();
+        if (button != null) button.interactable = shouldInteract;
+
+        // 文字标签同步压暗，否则「暗底亮字」看着仍像可用
+        var labels = changeWeaponButton.GetComponentsInChildren<UnityEngine.UI.Text>(true);
+        for (int i = 0; i < labels.Length; i++)
+        {
+            var lc = labels[i].color;
+            lc.a = unlocked ? 1f : lockedButtonAlpha;
+            labels[i].color = lc;
+        }
+    }
 
     /// <summary>在现有触屏 Canvas 上挂一个置顶的诊断文本，不新建 Canvas 以免影响门控本身。</summary>
     private Text BuildDiagnosticsLabel()

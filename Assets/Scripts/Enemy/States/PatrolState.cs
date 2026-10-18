@@ -15,6 +15,9 @@ public class PatrolState : IEnemyState
             return;
         }
 
+        // 巡视移动播跑动帧。原先只置 isIdle=false，但 Moving 状态仅由 isChasing 从
+        // Entry 进入，巡视时永远停在待机动画——三个火把怪都配了路点，走的都是巡视。
+        e.anim.SetBool("isMoving", true);
         e.anim.SetBool("isIdle", false);
     }
 
@@ -32,6 +35,7 @@ public class PatrolState : IEnemyState
             e.patrolWait -= Time.deltaTime;
             e.rb.velocity = Vector2.zero;
             e.anim.SetBool("isIdle", true);
+            e.anim.SetBool("isMoving", false);
             return;
         }
 
@@ -43,6 +47,7 @@ public class PatrolState : IEnemyState
             return;
         }
 
+        e.anim.SetBool("isMoving", true);
         e.anim.SetBool("isIdle", false);
         e.en.Patrol(target.position);
 
@@ -61,6 +66,7 @@ public class PatrolState : IEnemyState
             e.rb.velocity = Vector2.zero;
         }
 
+        e.anim.SetBool("isMoving", false);
         e.anim.SetBool("isIdle", false);
     }
 }

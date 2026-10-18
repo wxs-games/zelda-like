@@ -7,6 +7,7 @@ public class ChaseState : IEnemyState
     public void OnEnter(EnemyController e)
     {
         e.anim.SetBool("isChasing", true);
+        e.anim.SetBool("isMoving", true);
     }
 
     public void OnUpdate(EnemyController e)
@@ -25,5 +26,6 @@ public class ChaseState : IEnemyState
     public void OnExit(EnemyController e)
     {
         e.anim.SetBool("isChasing", false);
+        e.anim.SetBool("isMoving", false);
     }
 }
