@@ -24,3 +24,7 @@ Thumbs.db
 # （Tools/art-pipeline 是早期已跟踪的遗留，未清理）
 /Tools/touch-kit/
 /Tools/android-ship-kit/
+/Tools/state-machine/
+/Tools/game-database/
+/Tools/quest-kit/
+/Tools/audio-synth/
