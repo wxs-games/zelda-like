@@ -19,3 +19,7 @@ Thumbs.db
 # IDE local cache
 .codegraph/
 .merkle-snapshot.json
+
+# 管线/工具：不纳入工程 git，由 gongzuoliu 工作区统一版本化
+# （Tools/art-pipeline 是早期已跟踪的遗留，未清理）
+/Tools/touch-pipeline/
