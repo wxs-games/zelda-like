@@ -1,137 +1,144 @@
-# Zelda-like · 2D 俯视角动作 RPG
+# ZeldaLike · 2D 俯视角动作 RPG
 
-一款基于 Unity 的类塞尔达 2D 动作 RPG Demo：探索地图、近战/远程战斗、升级点天赋、拾取道具、与商人交易。全程手写 C# 玩法逻辑，未使用第三方游戏框架。
+一款基于 Unity 的类塞尔达 2D 动作 RPG：探索地图、近战/远程战斗、升级点天赋、拾取道具、与商人交易、接取任务。玩法逻辑全部手写 C#，未使用第三方游戏框架；现已支持 **Android 触屏操作**并出包。
 
-- **引擎版本**：Unity 2021.3.45f2
-- **渲染**：2D（Sprite / Tilemap / Animator）
-- **语言**：C#
-- **版本控制**：Git + Git LFS（图片资源）
-- **玩法循环**：探索 → 击杀怪物获取经验 → 升级获得技能点 → 天赋强化 → 拾取/交易道具 → 挑战更多怪物
+## 下载
 
----
+最新 Android 安装包见 [Releases](https://github.com/wxs-games/zelda-like/releases)：
 
-## 快速运行
+| 版本 | 文件 | 大小 |
+|---|---|---|
+| v1.0.0（versionCode 20） | `ZeldaLike_v1.0.0_release.apk` | 40.3 MB |
 
-1. 用 Unity Hub 以 **2021.3.45f2** 打开本工程（首次打开需等待 Library 导入）；
-2. 在 Project 窗口双击打开 `Assets/Scenes/SampleScene.unity`（工程仅这一个场景；clone 后编辑器默认显示空白场景属正常现象，手动打开即可）；
-3. 点击编辑器顶部 **▶ Play** 开始，无需打包。
+> 小米 / MIUI 若提示 `INSTALL_FAILED_USER_RESTRICTED`，改用
+> `adb push app.apk /data/local/tmp/app.apk` + `adb shell pm install -r -t /data/local/tmp/app.apk`。
 
-> 死亡后角色会被隐藏，目前没有复活流程，重新点击 Play 即可再来一局。
->
-> 通过 `git clone` 获取的项目会自动拉取 LFS 图片资源（需本机安装 [Git LFS](https://git-lfs.com)）；不建议直接下载 ZIP。
+## 技术栈
 
----
+| 项 | 值 |
+|---|---|
+| 引擎 | Unity **2021.3.45f2c1**（中国版） |
+| 渲染 | 2D（Sprite / Tilemap / Animator），ColorSpace Linear |
+| 输入 | **Input System 1.4.4**（PC 键鼠 + 实体手柄 + 触屏三路统一到动作门面） |
+| 相机 | Cinemachine 2.10.3 |
+| UI | uGUI + TextMeshPro 3.0.6 |
+| 脚本后端 | IL2CPP / Release（Android，ARMv7 + ARM64） |
+| 图形 API | Vulkan |
+| 版本控制 | Git + Git LFS（图片资源） |
 
-## 3 分钟演示路线
+## 快速开始
 
-| 顺序 | 操作 | 对应展示的系统 |
-| --- | --- | --- |
-| 1 | `WASD` 移动，按住 `Left Shift` 奔跑 | 玩家状态机 / 朝向翻转 |
-| 2 | 按 `K` 挥剑攻击火把怪，击杀后观察经验条上涨、升级 | 战斗、击退、经验与升级 |
-| 3 | 按 `2` 打开天赋树，点击图标消耗技能点加点 | 技能树、前置依赖解锁 |
-| 4 | 按 `1` 打开属性面板，查看伤害/速度数值变化 | 属性系统、数据与 UI 同步 |
-| 5 | 按 `Q` 切换到弓箭，先按方向键瞄准，再按 `J` 射箭 | 双武器切换、8 方向投射物 |
-| 6 | 走过地上的蘑菇/牛排自动拾取，左键点击背包物品使用 | 拾取、背包堆叠、消耗品/临时 Buff |
-| 7 | 走到商人身边按 `F` 打开商店，尝试买入与半价卖出 | 商店、金币经济、暂停式 UI |
-| 8 | 走到山体入口处，观察角色被山体遮挡、穿行到高处 | 2D 地形高差（动态碰撞器 + 排序层） |
+1. 安装 [Git LFS](https://git-lfs.com)，再 `git clone` 本仓库（直接下 ZIP 会拿到 LFS 指针而不是图片）；
+2. 用 Unity Hub 以 **2021.3.45f2c1** 打开工程，等待 Library 首次导入；
+3. 打开 `Assets/Scenes/SampleScene.unity`，点 **▶ Play**。
 
----
+> 仓库只跟踪 `Assets/`、`Packages/`、`ProjectSettings/` 与根目录文件。
+> `Docs/`（设计文档、规格）与 `Tools/`（美术/触屏/出包工具包）属于本地资产，**不随仓库分发**，
+> 克隆后若需要出包工具，需另行获取。
 
-## 键盘操作
+## 操作
 
-| 按键 | 功能 | 说明 |
-| --- | --- | --- |
-| `W A S D` / 方向键 | 移动 | 八方向移动，角色自动左右翻转 |
-| `Left Shift`（按住） | 奔跑 | 移动速度临时 +3 |
-| `K` | 近战挥砍 | 冷却 1 秒；攻击点圆形范围内的首个敌人受伤并被击退、硬直 |
-| `J` | 弓箭射击 | 冷却 0.5 秒；以**最后一次移动方向**为瞄准方向（八方向），箭矢命中后插在目标上，2 秒后销毁 |
-| `Q` | 切换武器 | 剑 / 弓 互换，通过启用/禁用组件并切换 Animator 动画分层实现 |
-| `F` | 交互 | 靠近商人时打开/关闭商店（游戏暂停） |
-| `1` | 属性面板 | 查看伤害、速度；打开时暂停角色与敌人的活动 |
-| `2` | 天赋树 | 打开/关闭技能树（`Time.timeScale = 0` 全局暂停） |
-| 鼠标左键（背包格） | 使用物品 | 商店打开时左键变为**出售**（半价） |
-| 鼠标右键（背包格） | 丢弃物品 | 掉落在脚下，移出后可重新拾取 |
+### PC
 
----
+| 按键 | 功能 |
+|---|---|
+| `WASD` / 方向键 | 移动（八方向，自动左右翻转） |
+| `Left Shift`（按住） | 奔跑 |
+| `K` | 近战挥砍（冷却 1s，命中击退 + 硬直） |
+| `J` | 弓箭射击（以最后移动方向瞄准，八方向） |
+| `Q` | 剑 / 弓切换 |
+| `F` | 交互（对话、商店） |
+| `1` / `2` / `L` | 属性面板 / 天赋树 / 任务日志 |
+| `Esc` | 取消（关闭商店等） |
+| 鼠标左键 / 右键（背包格） | 使用 / 丢弃（商店打开时左键为半价出售） |
 
-## 游戏系统
+### Android 触屏
 
-### 1. 战斗系统
-- **近战**：动画进行到特定帧时由动画事件触发伤害判定（`Physics2D.OverlapCircleAll`），命中造成伤害 + 击退 + 眩晕。
-- **远程**：箭矢为独立 Prefab，发射时赋予方向与旋转；命中敌人或障碍物会"插"在目标上成为子物体。
-- 攻击/射击期间角色速度归零，动作结束通过动画事件回到空闲状态，保证动作手感与状态一致性。
+| 控件 | 功能 |
+|---|---|
+| 虚拟摇杆 | 移动（持续值，松开即归零） |
+| 攻击键 | 按当前武器分派：剑 → 挥砍，弓 → 射击 |
+| 交互键 | 对话 / 商店 / 拾取交互 |
+| 菜单中枢 | 属性、天赋、任务日志、存档 |
 
-### 2. 敌人 AI
-- 三态状态机：**Idle（待机）→ Chasing（追击）→ Attacking（攻击）**。
-- 玩家进入侦测圈触发追击并自动转向；进入攻击距离后出手，造成伤害与击退，随后进入攻击冷却；玩家离开侦测范围则回到 Idle。
-- 被玩家攻击时会被击退且暂停移动。
+触屏按钮走 `Button.onClick` 直连业务，**不经过虚拟手柄设备**——`OnScreenStick` 与 `OnScreenButton` 共用同一个虚拟 Gamepad，摇杆每帧写 `leftStick` 会冲刷掉其它按钮的边沿，表现为「推着摇杆时按钮全部失灵」。
 
-### 3. 经验 / 等级 / 技能树
-- 击杀怪物获得经验；升级所需经验按 1.2 倍递增。
-- 每次升级获得 1 点技能点，在天赋树中点击图标消耗。
-- 已配置的技能节点：**Max Health Boost**（最大生命提升，可升 5 级）、**Sword Slash**（解锁近战，1 级满级）、**电闪雷鸣**（3 级节点，解锁链路完整，效果分发已预留扩展位）。
-- 高级技能需要前置技能升满后才会解锁（灰色 Locked → 亮色可点）。
+## 已实现系统
 
-### 4. 背包与道具
-- 物品全部为 `ScriptableObject` 数据资产，支持堆叠（默认每格 3 个），背包满时无法拾取。
-- 金币为特殊物品，拾取后直接进入金币计数，不占格子。
-- 已配置消耗品：**蘑菇**（回复 5 点生命）、**牛排**（回复 25 点生命）、**南瓜**（3 秒内移动速度 +5，到期自动还原的临时 Buff）。
-
-### 5. 商店系统
-- 靠近商人按 `F` 打开，游戏暂停（`Time.timeScale = 0`），再次按 `F` 或离开范围关闭。
-- 三个页签：**物品 / 武器 / 护甲**；金币不足或背包无空位时无法购买。
-- 商店打开期间，左键点击背包中的物品可以半价卖出。
-
-### 6. 地形高差
-- 山体设置入口/出口触发器：进入高处时关闭山体碰撞器、打开边界碰撞器，并抬高角色 `sortingOrder`，实现"走到山前被遮挡、上山后在山前显示"的 2.5D 层次效果，无需 3D 相机。
-
----
+- **战斗**：近战圆形范围判定（动画事件触发）、八方向箭矢、击退与硬直、双武器切换
+- **敌人 AI**：Idle → Chase → Attack 三态，侦测圈、攻击冷却、受击硬直
+- **经验 / 等级 / 技能树**：击杀得经验、升级得点数、前置技能满级才解锁后续节点
+- **背包 / 道具 / 商店**：SO 数据资产、堆叠、消耗品与临时 Buff、三页签商店、半价回收
+- **任务系统**：四态流转（未接 / 进行中 / 待交付 / 已交付）、击杀与收集目标、任务日志、接取/完成/交付横幅
+- **NPC 对话**：条件/动作 ID 注册表，对话选项可门控任务接取与交付
+- **存档**：单 JSON 存档（属性、背包、金币、经验、技能、任务、玩家位置与场景），手动存/读 + 退出与切后台自动存
+- **音频**：程序化合成 12 个音效 + 1 首无缝循环 BGM
+- **2.5D 地形高差**：进入山体切换碰撞器与 `sortingOrder`，实现遮挡与穿行
+- **移动端**：虚拟摇杆、安全区适配、切后台暂停与自动存档、60fps 上限、禁止熄屏
 
 ## 技术架构
 
 ### 1. 泛型状态机
-一套 `StateMachine<T> / IState<T>` 同时驱动玩家与敌人两套完全不同的状态集；状态以单例对象存在，切换时无堆分配。
-- 核心框架：[StateMachine.cs](Assets/Scripts/StateMachine/StateMachine.cs)
-- 玩家状态：[PlayerIdleState.cs](Assets/Scripts/Player/States/PlayerIdleState.cs)、[PlayerMoveState.cs](Assets/Scripts/Player/States/PlayerMoveState.cs)、[PlayerAttackState.cs](Assets/Scripts/Player/States/PlayerAttackState.cs)、[PlayerShootState.cs](Assets/Scripts/Player/States/PlayerShootState.cs)
-- 敌人状态：[IdleState.cs](Assets/Scripts/Enemy/States/IdleState.cs)、[ChaseState.cs](Assets/Scripts/Enemy/States/ChaseState.cs)、[AttackState.cs](Assets/Scripts/Enemy/States/AttackState.cs)
+`StateMachine<T> / IState<T>` 同时驱动玩家与敌人两套状态集，切换时无堆分配。
+- [StateMachine.cs](Assets/Scripts/StateMachine/StateMachine.cs)
+- 玩家状态：`Assets/Scripts/Player/States/`
+- 敌人状态：`Assets/Scripts/Enemy/States/`
 
-### 2. 数据驱动（ScriptableObject）
-物品属性与技能配置均为资产文件，新增道具/技能无需改业务代码。
-- [ItemSO.cs](Assets/Scripts/Inventory%20%26%20Shop/ItemSO.cs)、[SkillSO.cs](Assets/Scripts/SkillTree/SkillSO.cs)
+### 2. 输入动作门面
+游戏逻辑只读「动作」（Move / AttackPressed / InteractPressed…），不直接读物理按键；PC、手柄、触屏各自绑定到同一套动作，加端不改玩法代码。
+- [GameInput.cs](Assets/Scripts/Core/GameInput.cs)、[TouchInputBridge.cs](Assets/Scripts/UI/TouchInputBridge.cs)
 
-### 3. 事件解耦（C# event / Action）
-击杀→经验、升级→技能点、掉落拾取→背包、商店开关→背包格行为切换，各系统之间零直接引用；订阅均在 `OnEnable/OnDisable` 中成对注销，避免内存泄漏。
-- [EnemyHealth.cs](Assets/Scripts/Enemy/EnemyHealth.cs)、[ExpManager.cs](Assets/Scripts/Player/ExpManager.cs)、[InventoryManager.cs](Assets/Scripts/InventoryManager.cs)
+### 3. 数据驱动（ScriptableObject）
+道具、技能、任务、对话节点均为资产；新增内容不改业务代码。
+- [ItemSO.cs](Assets/Scripts/Inventory%20%26%20Shop/ItemSO.cs)、[SkillSO.cs](Assets/Scripts/SkillTree/SkillSO.cs)、[QuestSO.cs](Assets/Scripts/Quest/QuestSO.cs)
 
-### 4. 动画事件驱动战斗帧
-伤害判定、箭矢生成、攻击结束回 Idle 都挂在动画帧上，程序与美术节奏天然同步。
-- [PlayerCombat.cs](Assets/Scripts/Player/PlayerCombat.cs)、[PlayerBow.cs](Assets/Scripts/Player/PlayerBow.cs)
+### 4. 存档与资产数据库
+存档只写字符串 ID，读档靠 `GameDatabase` 反查回 SO；跨场景读档等 `sceneLoaded` 再落地。
+- [SaveSystem.cs](Assets/Scripts/Core/SaveSystem.cs)、[GameDatabase.cs](Assets/Scripts/Core/GameDatabase.cs)
 
-### 5. 集中式数值管理
-`StatsManager` 单例统一持有伤害、速度、生命等数值，技能、道具、UI 都读写同一数据源，保证面板与实战数值一致。
-- [StatsManager.cs](Assets/Scripts/StatsManager.cs)、[StatsUI.cs](Assets/Scripts/StatsUI.cs)
+### 5. 事件解耦
+击杀→经验、升级→技能点、拾取→背包、任务状态→UI，各系统间零直接引用，订阅在 `OnEnable/OnDisable` 成对注销。
 
-### 6. 健壮性细节
-商店/天赋树暂停时处理了玩家离开范围导致的 `timeScale` 复位问题；致死当帧不再施加击退，避免对已销毁对象取组件。
-
----
+### 6. 动画事件驱动战斗帧
+伤害判定、箭矢生成、动作结束回 Idle 均挂在动画帧上，程序节奏与美术同步。
 
 ## 目录结构
 
 ```
-Assets/Scripts/
-├── StateMachine/        # 泛型状态机框架（玩家/敌人共用）
-├── Player/              # 玩家控制器、战斗、弓箭、生命、经验、击退、各状态
-│   └── States/
-├── Enemy/               # 敌人 AI、生命、移动、侦测、击退
-│   └── States/
-├── Inventory & Shop/    # 物品 SO、掉落拾取、背包、商店（含商人与页签）
-├── SkillTree/           # 技能 SO、技能槽、天赋树管理、效果分发
-├── StatsManager.cs      # 全局数值单例
-├── StatsUI.cs           # 属性面板
-└── ElevationEntry/Exit  # 山体高差区域进出处理
+Assets/
+├── Scripts/
+│   ├── Core/            # 输入门面、存档、资产数据库、存档数据
+│   ├── StateMachine/    # 泛型状态机框架
+│   ├── Player/          # 控制器、战斗、弓、生命、经验、各状态
+│   ├── Enemy/           # AI、生命、移动、侦测、各状态
+│   ├── Inventory & Shop/# 道具 SO、掉落、背包、商店
+│   ├── SkillTree/       # 技能 SO、槽位、天赋树、效果分发
+│   ├── Quest/           # 任务 SO、管理器、日志与横幅 UI
+│   ├── NPC/             # 对话 SO、管理器、交互
+│   ├── Audio/           # 音效与 BGM 播放
+│   ├── UI/              # 触屏摇杆、按钮、菜单中枢、安全区
+│   ├── Editor/          # 出包与工程配置（仅编辑器）
+│   ├── MobileRuntime.cs # 切后台/帧率/休眠
+│   └── StatsManager.cs  # 全局数值
+├── Input/               # UI 触摸动作资产
+├── Scenes/              # SampleScene / ForestArea
+├── Art/ Audio/ Prefabs/ ScriptableObjects/ Settings/
+└── ...
 ```
 
----
+## 构建 Android 包
 
-*如需调整按键，可在 Unity 编辑器 `Edit → Project Settings → Input Manager` 中修改 Slash / Shoot / Interact / ChangeEquipment / ToggleStats / ToggleSkillTree 六个自定义轴。*
+1. 安装 Unity 2021.3.45f2c1 的 Android Build Support（SDK / NDK / JDK）；
+2. 菜单 **Tools → Setup → Configure Mobile** 固化包名、架构、方向、图形 API 与输入处理（`activeInputHandler` 必须是 `1`，改完需重启编辑器）；
+3. 菜单 **Build → 出包 → Android APK**（自动递增 versionCode，产物在工程根 `Builds/`）。
+
+> 出包脚本与踩坑手册在 `Tools/android-ship-kit/`，不随仓库分发。
+> 关键硬性卡点：`Active Input Handling = Both` 会被 Android 直接拒绝；运行时代码引用 `UnityEditor` 会 CS0234；
+> 双图形 API 会让 ShaderCompiler 死锁。
+
+## 已知限制
+
+- `ForestArea` 场景已存在，但 Build Settings 目前只启用了 `SampleScene`
+- 仅单存档位，无多周目 / 云存档
+- 上架前需配置正式签名（当前构建未接入发布流程）
+- 无多语言支持（文本为中文硬编码）
