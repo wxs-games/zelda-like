@@ -20,8 +20,7 @@ Thumbs.db
 .codegraph/
 .merkle-snapshot.json
 
-# 不纳入版本管理（用户 2026-10-19 指定）：文档、Unity 工程配置、工具
-# Tools 的版本化由 gongzuoliu 工作区统一负责
+# 不纳入版本管理（用户 2026-10-19 指定）：文档、工具
+# ProjectSettings 保留跟踪（clone 后可直接出包）；Tools 的版本化由 gongzuoliu 工作区统一负责
 /Docs/
-/ProjectSettings/
 /Tools/
