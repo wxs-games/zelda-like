@@ -75,7 +75,4 @@ public class QuestSO : ScriptableObject
     [Header("奖励（交付时发放）")]
     [Tooltip("金币奖励，进 InventoryManager.gold")]
     public int rewardGold;
-
-    [Tooltip("经验奖励，进 ExpManager.GainExperience")]
-    public int rewardExp;
 }

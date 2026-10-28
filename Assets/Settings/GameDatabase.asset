@@ -21,9 +21,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 634a6259085c267419d1331dabee5aeb, type: 2}
   - {fileID: 11400000, guid: 62489a6866fe43b49b9a5cf54ae064f2, type: 2}
   - {fileID: 11400000, guid: 7819ce28ee8f94b449973e3803a343c9, type: 2}
-  skills:
-  - {fileID: 11400000, guid: c41c6d3e7f6c875479fb24b12558a967, type: 2}
-  - {fileID: 11400000, guid: 6d0841a588eb7b949a0b08c75f184368, type: 2}
-  - {fileID: 11400000, guid: b5745d4378a28874bbfec92cdac083b0, type: 2}
   quests:
   - {fileID: 11400000, guid: a6061c4e91d89ad4ca8e3a455b973fc2, type: 2}

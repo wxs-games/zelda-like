@@ -23,7 +23,6 @@ public class MenuHubUI : MonoBehaviour
     public CanvasGroup hubCanvas;
 
     public StatsUI statsUI;
-    public ToggleSkillTree skillTreeUI;
     public QuestLogUI questLogUI;
 
     private bool _open;
@@ -81,12 +80,6 @@ public class MenuHubUI : MonoBehaviour
     {
         CloseHub();
         if (statsUI != null) statsUI.OpenPanel();
-    }
-
-    public void OpenSkillTree()
-    {
-        CloseHub();
-        if (skillTreeUI != null) skillTreeUI.OpenPanel();
     }
 
     public void OpenQuestLog()

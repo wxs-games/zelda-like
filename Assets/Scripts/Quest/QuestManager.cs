@@ -216,8 +216,6 @@ public class QuestManager : MonoBehaviour
         // 发放奖励
         if (quest.rewardGold > 0 && InventoryManager.Instance != null)
             InventoryManager.Instance.AddGold(quest.rewardGold);
-        if (quest.rewardExp > 0 && ExpManager.Instance != null)
-            ExpManager.Instance.GainExperience(quest.rewardExp);
 
         _states[quest.questId] = QuestState.Delivered;
         NotifyChanged(quest);

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 ///
 /// JsonUtility 的两条硬约束决定了这里的形状：
 /// 1. 不能序列化 Dictionary —— 所以任务状态/进度用「键 + 值」的平行列表表达；
-/// 2. 不能序列化 ScriptableObject 引用 —— 所以道具/技能/任务只存字符串 ID，
+/// 2. 不能序列化 ScriptableObject 引用 —— 所以道具/任务只存字符串 ID，
 ///    读档时由 GameDatabase 反查回资产对象。
 /// </summary>
 [Serializable]
@@ -24,8 +24,6 @@ public class SaveData
 
     public StatsData stats = new StatsData();
     public InventoryData inventory = new InventoryData();
-    public SkillData skills = new SkillData();
-    public ExpData exp = new ExpData();
     public QuestsData quests = new QuestsData();
 }
 
@@ -57,31 +55,6 @@ public class InventorySlotData
     /// <summary>ItemSO.id；空槽为空串。</summary>
     public string itemId;
     public int quantity;
-}
-
-[Serializable]
-public class SkillData
-{
-    public int availablePoints;
-    public List<SkillSlotData> slots = new List<SkillSlotData>();
-}
-
-[Serializable]
-public class SkillSlotData
-{
-    /// <summary>SkillSO.skillName；空槽为空串。</summary>
-    public string skillName;
-    public int currentLevel;
-    public bool isUnlocked;
-}
-
-[Serializable]
-public class ExpData
-{
-    public int level;
-    public int currentExp;
-    public int expToLevel;
-    public float expGrowMultiplier;
 }
 
 /// <summary>任务状态与进度。QuestState 本身是 enum，JsonUtility 不支持字典，

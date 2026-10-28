@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 任务日志面板：按 ToggleQuestLog（L 键）开关。
-/// 惯例与 StatsUI / ToggleSkillTree 一致：CanvasGroup 显隐 + timeScale=0 暂停 + 面板互斥。
+/// 惯例与 StatsUI 一致：CanvasGroup 显隐 + timeScale=0 暂停 + 面板互斥。
 /// 内容由 QuestManager.GetActiveQuests() 动态生成；任务状态变化时自动刷新。
 /// </summary>
 public class QuestLogUI : MonoBehaviour
@@ -50,7 +50,7 @@ public class QuestLogUI : MonoBehaviour
         }
     }
 
-    // 打开任务日志：与属性/技能面板互斥，暂停游戏后刷新内容
+    // 打开任务日志：与属性面板互斥，暂停游戏后刷新内容
     public void OpenPanel()
     {
         // 对话进行中不允许打开（避免与对话框的 timeScale/输入冲突）
@@ -58,8 +58,6 @@ public class QuestLogUI : MonoBehaviour
 
         var stats = FindObjectOfType<StatsUI>();
         if (stats != null && stats.IsOpen) stats.ClosePanel();
-        var skill = FindObjectOfType<ToggleSkillTree>();
-        if (skill != null && skill.IsOpen) skill.ClosePanel();
 
         Time.timeScale = 0;
         panelCanvas.alpha = 1;

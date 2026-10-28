@@ -99,7 +99,6 @@ public class QuestBannerUI : MonoBehaviour
             case QuestState.Delivered:
                 string reward = "";
                 if (quest.rewardGold > 0) reward += $"  金币 +{quest.rewardGold}";
-                if (quest.rewardExp > 0) reward += $"  经验 +{quest.rewardExp}";
                 _queue.Enqueue(("任务交付", quest.title + reward, new Color(0.55f, 1f, 0.65f)));
                 break;
         }

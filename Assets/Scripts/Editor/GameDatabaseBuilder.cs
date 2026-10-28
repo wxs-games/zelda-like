@@ -3,9 +3,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// 菜单 Tools/Setup/Build Game Database：扫描工程内全部 ItemSO / SkillSO / QuestSO，
+/// 菜单 Tools/Setup/Build Game Database：扫描工程内全部 ItemSO / QuestSO，
 /// 生成或更新 GameDatabase.asset。
-/// 新增了可序列化的 SO 资产（道具/技能/任务）后重跑一次，存档系统才能按 ID 找到它们。
+/// 新增了可序列化的 SO 资产（道具/任务）后重跑一次，存档系统才能按 ID 找到它们。
 /// </summary>
 public static class GameDatabaseBuilder
 {
@@ -24,7 +24,6 @@ public static class GameDatabaseBuilder
         }
 
         db.items = new List<ItemSO>(FindAll<ItemSO>());
-        db.skills = new List<SkillSO>(FindAll<SkillSO>(IsUsableSkill));
         db.quests = new List<QuestSO>(FindAll<QuestSO>());
 
         EditorUtility.SetDirty(db);
@@ -34,7 +33,7 @@ public static class GameDatabaseBuilder
         // 生成后立刻用未保存的内存内容建索引，方便马上进 Play 验证
         db.BuildIndex();
 
-        Debug.Log($"[GameDatabaseBuilder] 完成：道具 {db.items.Count}、技能 {db.skills.Count}、任务 {db.quests.Count}");
+        Debug.Log($"[GameDatabaseBuilder] 完成：道具 {db.items.Count}、任务 {db.quests.Count}");
     }
 
     private static List<T> FindAll<T>(System.Predicate<T> accept = null) where T : ScriptableObject
@@ -50,18 +49,6 @@ public static class GameDatabaseBuilder
         }
         list.Sort((a, b) => string.Compare(a.name, b.name));
         return list;
-    }
-
-    /// <summary>
-    /// 过滤掉「占位空壳」技能资产：建表期残留的空对象（skillName 为空、maxLevel 为 0）、
-    /// 或尚未填好名称与等级的半成品。这类资产进了数据库会以空字符串为键污染索引，
-    /// 读档反查时拿到 null。真正的空壳资产应由人工确认后删除。
-    /// </summary>
-    private static bool IsUsableSkill(SkillSO skill)
-    {
-        if (string.IsNullOrWhiteSpace(skill.skillName)) return false;
-        if (skill.maxLevel <= 0) return false;
-        return true;
     }
 
     private static void EnsureFolder(string path)

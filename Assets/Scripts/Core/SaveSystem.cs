@@ -170,10 +170,6 @@ public class SaveSystem : MonoBehaviour
 
         CaptureStats(stats, data);
         CaptureInventory(inv, data);
-        CaptureExp(data);
-
-        var skills = FindSkillTreeManager();
-        if (skills != null) CaptureSkills(skills, data);
 
         var quest = QuestManager.Instance;
         if (quest != null) CaptureQuests(quest, data);
@@ -212,36 +208,6 @@ public class SaveSystem : MonoBehaviour
         }
     }
 
-    private static void CaptureExp(SaveData data)
-    {
-        var exp = ExpManager.Instance;
-        if (exp == null) return;
-
-        data.exp = new ExpData
-        {
-            level = exp.level,
-            currentExp = exp.currentExp,
-            expToLevel = exp.expToLevel,
-            expGrowMultiplier = exp.expGrowMultiplier
-        };
-    }
-
-    private static void CaptureSkills(SkillTreeManager tree, SaveData data)
-    {
-        data.skills = new SkillData { availablePoints = tree.availablePoints };
-        if (tree.skillSlots == null) return;
-
-        foreach (var slot in tree.skillSlots)
-        {
-            data.skills.slots.Add(new SkillSlotData
-            {
-                skillName = slot.skillSO != null ? slot.skillSO.skillName : string.Empty,
-                currentLevel = slot.currentLevel,
-                isUnlocked = slot.isUnlocked
-            });
-        }
-    }
-
     private static void CaptureQuests(QuestManager quest, SaveData data)
     {
         data.quests = quest.ExportSaveData();
@@ -262,8 +228,6 @@ public class SaveSystem : MonoBehaviour
         ApplyPlayerPosition(data);
         ApplyStats(data.stats);
         ApplyInventory(data.inventory);
-        ApplyExp(data.exp);
-        ApplySkills(data.skills);
         ApplyQuests(data.quests);
 
         Debug.Log("[SaveSystem] 读档完成");
@@ -341,48 +305,6 @@ public class SaveSystem : MonoBehaviour
         }
     }
 
-    private static void ApplyExp(ExpData e)
-    {
-        var exp = ExpManager.Instance;
-        if (exp == null || e == null) return;
-
-        exp.level = e.level;
-        exp.currentExp = e.currentExp;
-        exp.expToLevel = e.expToLevel;
-        exp.expGrowMultiplier = e.expGrowMultiplier;
-        exp.UpdateUI();
-    }
-
-    private void ApplySkills(SkillData s)
-    {
-        var tree = FindSkillTreeManager();
-        if (tree == null || s == null) return;
-
-        tree.availablePoints = s.availablePoints;
-        if (tree.skillSlots != null)
-        {
-            for (int i = 0; i < tree.skillSlots.Length && i < s.slots.Count; i++)
-            {
-                var slot = tree.skillSlots[i];
-                var saved = s.slots[i];
-
-                slot.skillSO = string.IsNullOrEmpty(saved.skillName) ? null : database.GetSkill(saved.skillName);
-                if (slot.skillSO == null && !string.IsNullOrEmpty(saved.skillName))
-                    Debug.LogWarning($"[SaveSystem] 技能名在 GameDatabase 中不存在：{saved.skillName}");
-
-                slot.currentLevel = saved.currentLevel;
-                slot.isUnlocked = saved.isUnlocked;
-                slot.RefreshUI();
-            }
-        }
-        tree.UpdateAbilityPoints(0); // 顺带刷新点数文本
-
-        // 注意：这里**不能**按技能等级重放属性效果。
-        // stats 段存的是「已含技能加成」的最终属性（存档发生在花点之后），
-        // 若再叠加一次技能增量就会双重计算（实测 maxHP 102→104、dmg 4→7）。
-        // 技能效果与属性基线由 stats 段一次性对齐，技能等级只负责展示与后续加点。
-    }
-
     private void ApplyQuests(QuestsData q)
     {
         var quest = QuestManager.Instance;
@@ -397,10 +319,5 @@ public class SaveSystem : MonoBehaviour
     {
         // 玩家随 GameRoot 持久存活，场景里可能同时存在已停用的旧实例，取活动的那个
         return FindObjectOfType<PlayerController>();
-    }
-
-    private static SkillTreeManager FindSkillTreeManager()
-    {
-        return FindObjectOfType<SkillTreeManager>();
     }
 }

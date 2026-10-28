@@ -18,7 +18,6 @@ public static class GameInput
     private static readonly InputAction interact;
     private static readonly InputAction changeEquipment;
     private static readonly InputAction toggleStats;
-    private static readonly InputAction toggleSkillTree;
     private static readonly InputAction toggleQuestLog;
     private static readonly InputAction cancel;
 
@@ -52,7 +51,6 @@ public static class GameInput
         interact = NewButton("Interact", "<Keyboard>/f", "<Gamepad>/buttonNorth");
         changeEquipment = NewButton("ChangeEquipment", "<Keyboard>/q", "<Gamepad>/rightShoulder");
         toggleStats = NewButton("ToggleStats", "<Keyboard>/1");
-        toggleSkillTree = NewButton("ToggleSkillTree", "<Keyboard>/2");
         toggleQuestLog = NewButton("ToggleQuestLog", "<Keyboard>/l");
         cancel = NewButton("Cancel", "<Keyboard>/escape", "<Gamepad>/select");
 
@@ -63,7 +61,6 @@ public static class GameInput
         interact.Enable();
         changeEquipment.Enable();
         toggleStats.Enable();
-        toggleSkillTree.Enable();
         toggleQuestLog.Enable();
         cancel.Enable();
     }
@@ -115,9 +112,6 @@ public static class GameInput
 
     /// <summary>本帧按下属性面板开关。</summary>
     public static bool ToggleStatsPressed => toggleStats.WasPressedThisFrame();
-
-    /// <summary>本帧按下技能树面板开关。</summary>
-    public static bool ToggleSkillTreePressed => toggleSkillTree.WasPressedThisFrame();
 
     /// <summary>本帧按下任务日志面板开关。</summary>
     public static bool ToggleQuestLogPressed => toggleQuestLog.WasPressedThisFrame();

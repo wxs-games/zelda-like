@@ -25,13 +25,10 @@ public class StatsUI : MonoBehaviour
         }
     }
 
-    // 打开属性面板：先关闭技能面板（互斥），再暂停游戏并显示自己。
-    // 暂停统一使用 timeScale（与技能面板一致），不再分别禁用各组件。
+    // 打开属性面板：暂停游戏并显示自己。
+    // 暂停统一使用 timeScale，不再分别禁用各组件。
     public void OpenPanel()
     {
-        var skillTree = FindObjectOfType<ToggleSkillTree>();
-        if (skillTree != null && skillTree.IsOpen) skillTree.ClosePanel();
-
         Time.timeScale = 0;
         statsCanvas.alpha = 1;
         statsCanvas.blocksRaycasts = true;
