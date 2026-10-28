@@ -5,6 +5,7 @@
 UserSettings/
 MemoryCaptures/
 *.mp4
+!gameplay-demo.mp4
 *.docx
 .vs/
 *.csproj
