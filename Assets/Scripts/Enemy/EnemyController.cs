@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
-    public float damageAmount = 25f;
+    // 与 HeartHealthUI.hpPerHalfHeart 对齐：10 点 = 半颗心，玩家 100 血 = 5 颗心 = 挨 10 下
+    public float damageAmount = 10f;
     public float attackRange = 2;
     public float knockbackForce = 5f;
     public Transform player;
