@@ -43,6 +43,8 @@ public class SoundManager : MonoBehaviour
     public AudioClip uiHover;
     public AudioClip levelUp;
     public AudioClip jump;
+    [Tooltip("盾牌挡下攻击的撞击声。留空时回退到 enemyHit（金属撞击感接近）")]
+    public AudioClip shieldBlock;
 
     [Header("音量")]
     [Range(0f, 1f)] public float sfxVolume = 0.7f;
@@ -207,4 +209,10 @@ public class SoundManager : MonoBehaviour
     public void PlayUiHover() => PlaySfx(uiHover);
     public void PlayLevelUp() => PlaySfx(levelUp);
     public void PlayJump() => PlaySfx(jump);
+
+    /// <summary>盾牌格挡成功。shieldBlock 未配置时回退到 enemyHit。</summary>
+    public void PlayShieldBlock(float volumeScale = 1f)
+    {
+        PlaySfx(shieldBlock != null ? shieldBlock : enemyHit, volumeScale);
+    }
 }

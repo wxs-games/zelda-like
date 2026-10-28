@@ -11,13 +11,21 @@ public class ItemEffectApplier : MonoBehaviour
 
     public void ApplyItemEffects(ItemSO item)
     {
+        // 【顺序很重要】先把上限抬上去，再回血。
+        // 原实现是「先 currentHealth 再 maxHealth」，回血会被旧上限夹断——
+        // 心之容器加一颗心并回满时，玩家只能拿到旧上限的血量。
+        if (item.maxHealth > 0)
+        {
+            StatsManager.Instance.UpdateMaxHealth(item.maxHealth);
+        }
         if (item.currentHealth > 0)
         {
             StatsManager.Instance.UpdateHealth(item.currentHealth);
         }
-        if (item.maxHealth > 0)
+        if (item.healsToFull)
         {
-            StatsManager.Instance.UpdateMaxHealth(item.maxHealth);
+            var stats = StatsManager.Instance;
+            stats.UpdateHealth(Mathf.RoundToInt(stats.playerMaxHealth - stats.playerCurrentHealth));
         }
         if (item.speed > 0)
         {
@@ -41,6 +49,9 @@ public class ItemEffectApplier : MonoBehaviour
                 break;
             case Ability.Bow:
                 StatsManager.Instance.hasBow = true;
+                break;
+            case Ability.Shield:
+                StatsManager.Instance.hasShield = true;
                 break;
             case Ability.None:
             default:

@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     public Rigidbody2D playerrb;
     public PlayerCombat playerCombat;
     public PlayerBow playerBow;
+    public PlayerShield playerShield;
 
     private StateMachine<PlayerController> playerStateMachine;
 
@@ -17,9 +18,13 @@ public class PlayerController : MonoBehaviour
         playerrb = GetComponent<Rigidbody2D>();
         playerCombat = GetComponent<PlayerCombat>();
         playerBow = GetComponent<PlayerBow>();
+        playerShield = GetComponent<PlayerShield>();
         playerStateMachine = new StateMachine<PlayerController>(this);
         playerStateMachine.ChangeState(PlayerIdleState.Instance);
     }
+
+    /// <summary>是否正在举盾。举盾时禁止移动与攻击（塞尔达式站桩格挡）。</summary>
+    public bool IsBlocking => playerShield != null && playerShield.IsBlocking;
 
     void Start()
     {

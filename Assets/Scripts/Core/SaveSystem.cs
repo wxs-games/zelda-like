@@ -189,7 +189,8 @@ public class SaveSystem : MonoBehaviour
             playerKnockbackForce = s.playerKnockbackForce,
             playerKnockbackStun = s.playerKnockbackStun,
             hasSword = s.hasSword,
-            hasBow = s.hasBow
+            hasBow = s.hasBow,
+            hasShield = s.hasShield
         };
     }
 
@@ -275,6 +276,7 @@ public class SaveSystem : MonoBehaviour
         stats.playerKnockbackStun = s.playerKnockbackStun;
         stats.hasSword = s.hasSword;
         stats.hasBow = s.hasBow;
+        stats.hasShield = s.hasShield;
 
         if (stats.playerHealthText != null)
             stats.playerHealthText.text = "HP:" + stats.playerCurrentHealth + "/" + stats.playerMaxHealth;

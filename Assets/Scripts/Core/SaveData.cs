@@ -39,6 +39,7 @@ public class StatsData
     public float playerKnockbackStun;
     public bool hasSword;
     public bool hasBow;
+    public bool hasShield;
 }
 
 [Serializable]

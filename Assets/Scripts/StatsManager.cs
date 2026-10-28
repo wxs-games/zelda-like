@@ -37,10 +37,23 @@ public class StatsManager : MonoBehaviour
         get => _hasBow;
         set => _hasBow = value;
     }
+    public bool hasShield
+    {
+        get => _hasShield;
+        set { _hasShield = value; }
+    }
 
     // 静态后备字段：每个场景各有一份 StatsManager 实例，但能力状态全局唯一
     static bool _hasSword = false;
     static bool _hasBow = false;
+    static bool _hasShield = false;
+
+    /// <summary>
+    /// 血上限变化通知。心之容器拾取后 HUD 需要立刻多画一颗心，
+    /// 但 HeartHealthUI 是逐帧比对数值的，这里保留事件是为了让其它系统
+    /// （音效、飘字）也能挂上去，不依赖轮询。
+    /// </summary>
+    public static event System.Action<float> OnMaxHealthChanged;
 
     private void Awake()
     {
@@ -92,23 +105,27 @@ public class StatsManager : MonoBehaviour
     public void UpdateMaxHealth(int amount)
     {
         playerMaxHealth += amount;
-        playerHealthText.text = "HP:" + playerCurrentHealth + "/" + playerMaxHealth;
+        if (playerMaxHealth < 1f) playerMaxHealth = 1f;
 
+        // 上限降低时把当前血量一起夹住，否则会出现 HP 条超出上限的显示
+        if (playerCurrentHealth > playerMaxHealth) playerCurrentHealth = playerMaxHealth;
+
+        RefreshHealthText();
+        OnMaxHealthChanged?.Invoke(playerMaxHealth);
     }
     public void UpdateHealth(int amount)
     {
-        playerCurrentHealth += amount;
-        if (playerCurrentHealth < enemyMaxHealth)
-        {
+        // 原实现拿 enemyMaxHealth 当阈值比较，导致回血时钳位错乱；
+        // 统一按「当前 ± 值，再夹到 [0, 上限]」处理。
+        playerCurrentHealth = Mathf.Clamp(playerCurrentHealth + amount, 0f, playerMaxHealth);
+        RefreshHealthText();
+    }
 
-            playerHealthText.text = "HP:" + playerCurrentHealth + "/" + playerMaxHealth;
-        }
-        else
-        {
-            playerCurrentHealth = playerMaxHealth;
-            playerHealthText.text = "HP:" + playerCurrentHealth + "/" + playerMaxHealth;
-
-        }
+    /// <summary>把血量写进旧版文字血条（已被红心 HUD 取代，对象停用时字段仍可能在，故判空）。</summary>
+    private void RefreshHealthText()
+    {
+        if (playerHealthText == null) return;
+        playerHealthText.text = "HP:" + playerCurrentHealth + "/" + playerMaxHealth;
     }
     public void UpdateSpeed(int amount)
     {

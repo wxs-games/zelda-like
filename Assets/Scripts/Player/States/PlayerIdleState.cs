@@ -13,8 +13,16 @@ public class PlayerIdleState : IPlayerState
 
     public void OnUpdate(PlayerController p)
     {
+        // 举盾中：站桩格挡，不移动也不攻击。
+        // 放在所有分支之前，保证「按着盾键时 J 键不会偷偷挥剑」。
+        if (p.IsBlocking)
+        {
+            p.playerrb.velocity = Vector2.zero;
+            return;
+        }
+
         // 手游只有一个攻击键：按当前装备分派——拿剑就砍，拿弓就射。
-        // PC 端仍可用独立的 J 键直接射击，方便调试和手柄玩家。
+        // PC 端仍可用独立的 U 键直接射击，方便调试和手柄玩家。
         if (GameInput.AttackPressed)
         {
             if (p.playerBow.enabled)

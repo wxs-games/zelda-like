@@ -34,12 +34,14 @@ public class PlayerHealth : MonoBehaviour
     private Vector3 _spawnPoint;
     private Rigidbody2D _body;
     private PlayerController _controller;
+    private PlayerShield _shield;
 
     void Start()
     {
         _spawnPoint = transform.position;
         _body = GetComponent<Rigidbody2D>();
         _controller = GetComponent<PlayerController>();
+        _shield = GetComponent<PlayerShield>();
 
         // ForestArea 没有 UI 树，healthText 引用会为空，判空避免 NRE
         RefreshHealthText();
@@ -54,15 +56,30 @@ public class PlayerHealth : MonoBehaviour
                           + "/" + stats.playerMaxHealth;
     }
 
-    public void ChangeHealth(float amount)
+    /// <summary>
+    /// 扣血/回血。amount 为负表示受伤。
+    ///
+    /// 返回 true 表示伤害**真的落到了身上**；被盾牌挡下时返回 false，
+    /// 调用方（敌人 AI）据此跳过击退与硬直——否则会出现「挡住了但人还是被弹飞」。
+    /// </summary>
+    public bool ChangeHealth(float amount, Transform source = null)
     {
-        if (_isDead) return;
+        if (_isDead) return false;
 
         // 取当前**活动场景**里激活的 StatsManager。
         // 注意不能用 GetComponentInParent：StatsManager 挂在 GameRoot/UIManager 之下，
         // 与 Player 是兄弟分支，不是祖先，拿不到（实测返回 null）。
         var stats = StatsManager.GetActive();
-        if (stats == null) return;
+        if (stats == null) return false;
+
+        // 盾牌格挡：只看正面来的伤害。回血（amount > 0）不参与判定。
+        if (amount < 0 && _shield != null && _shield.BlocksHitFrom(source))
+        {
+            float through = amount * Mathf.Clamp01(_shield.blockedDamageRatio);
+            _shield.PlayBlockFeedback();
+            if (Mathf.Approximately(through, 0f)) return false;
+            amount = through;
+        }
 
         stats.playerCurrentHealth += amount;
         stats.playerCurrentHealth = Mathf.Clamp(
@@ -78,6 +95,8 @@ public class PlayerHealth : MonoBehaviour
         {
             Die();
         }
+
+        return true;
     }
 
     /// <summary>死亡：清速度、停手、隐藏玩家，把复活计时交给常驻驱动器。</summary>

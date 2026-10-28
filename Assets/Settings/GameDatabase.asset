@@ -17,9 +17,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: dbc08097938e1a641bedd9ef3400808d, type: 2}
   - {fileID: 11400000, guid: a870a6eb9144a754d92230b0a286ca3c, type: 2}
   - {fileID: 11400000, guid: 356388dddb660ed409c2e127ff0ece8e, type: 2}
+  - {fileID: 11400000, guid: bdb5ac755c2f8f14296ea426f68a73dc, type: 2}
   - {fileID: 11400000, guid: e0b96ed6e304c3d488d13f9334a8707d, type: 2}
   - {fileID: 11400000, guid: 634a6259085c267419d1331dabee5aeb, type: 2}
   - {fileID: 11400000, guid: 62489a6866fe43b49b9a5cf54ae064f2, type: 2}
+  - {fileID: 11400000, guid: f3a6052538acb684baa4e73552c20616, type: 2}
   - {fileID: 11400000, guid: 7819ce28ee8f94b449973e3803a343c9, type: 2}
   quests:
   - {fileID: 11400000, guid: a6061c4e91d89ad4ca8e3a455b973fc2, type: 2}

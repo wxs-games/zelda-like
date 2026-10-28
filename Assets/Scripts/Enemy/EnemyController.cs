@@ -62,10 +62,15 @@ public class EnemyController : MonoBehaviour
         UnityEngine.Debug.Log("Attacking player now!");
         if (Vector2.Distance(player.position, transform.position) <= attackRange)
         {
-            player.gameObject.GetComponent<PlayerHealth>().ChangeHealth(-damageAmount);
+            // 把攻击者传下去：玩家盾牌要按「来向」判断是否挡得住
+            bool damaged = player.gameObject.GetComponent<PlayerHealth>().ChangeHealth(-damageAmount, transform);
 
             // 本次伤害若已致死，PlayerHealth 会停用对象，不再施加击退与硬直
             if (!player.gameObject.activeInHierarchy)
+                return;
+
+            // 被盾牌完全挡下：不击退、不进硬直，否则「挡住了人还是被弹飞」
+            if (!damaged)
                 return;
 
             player.GetComponent<PlayerKnockbackable>().KnockBack(transform, knockbackForce);

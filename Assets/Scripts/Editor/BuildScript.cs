@@ -245,29 +245,23 @@ public static class BuildScript
 
     private static int ReadAndroidVersionCode()
     {
-        var t = FindType("UnityEditor.AndroidPlayerSettings");
-        if (t == null) return 0;
-        var p = t.GetProperty("bundleVersionCode", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-        if (p == null) return 0;
-        try { return Convert.ToInt32(p.GetValue(null)); } catch { return 0; }
+        // PlayerSettings.Android.bundleVersionCode 是公开 API，2021.3 装了 Android 模块就能直接读。
+        //
+        // 【为什么不再走 UnityEditor.AndroidPlayerSettings 反射】
+        // 老实现反射的是 internal 类型 UnityEditor.AndroidPlayerSettings，该类型在
+        // 2021.3 里已经取不到（FindType 返回 null）→ 静默返回 0 → 文件名变成 c1、
+        // 且 APK 清单里的 versionCode 根本没被写回去。实测 2026-10-28 那次出包
+        // 产物仍为 v20（与上一版同号），覆盖安装无法区分新旧包。
+        try { return PlayerSettings.Android.bundleVersionCode; }
+        catch { return 0; }
     }
 
     private static void WriteAndroidVersionCode(int value)
     {
-        var t = FindType("UnityEditor.AndroidPlayerSettings");
-        if (t == null) return;
-        var p = t.GetProperty("bundleVersionCode", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-        if (p == null) return;
-        try { p.SetValue(null, value); } catch { }
-    }
-
-    private static Type FindType(string name)
-    {
-        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        try { PlayerSettings.Android.bundleVersionCode = value; }
+        catch (Exception e)
         {
-            var t = asm.GetType(name);
-            if (t != null) return t;
+            Debug.LogWarning("[Build] 写入 versionCode 失败，产物可能与旧包同号：" + e.Message);
         }
-        return null;
     }
 }

@@ -55,6 +55,9 @@ public class InventoryManager : MonoBehaviour
     {
         if (itemSO.isGold)
             return true;
+        // 永久升级道具（心之容器）碰到就用掉，跟背包格子无关，背包满也应能捡
+        if (itemSO.applyOnPickup)
+            return true;
         bool hasSlot = false;
         foreach (var slot in itemSlots)
         {
@@ -96,6 +99,15 @@ public class InventoryManager : MonoBehaviour
         if (itemSO.unlocksAbility != Ability.None)
         {
             itemEffectApplier.ApplyItemEffects(itemSO);
+        }
+
+        // 永久升级道具（心之容器）：碰到立刻加血上限并回满，用完即消失，不进背包。
+        // 为什么必须单独一个分支：心之容器的 unlocksAbility 是 None，走不到上面的
+        // 能力解锁路径，原先会被当作普通可堆叠道具塞进背包——捡了却不加血。
+        if (itemSO.applyOnPickup)
+        {
+            itemEffectApplier.ApplyItemEffects(itemSO);
+            return;
         }
 
         foreach (var slot in itemSlots)

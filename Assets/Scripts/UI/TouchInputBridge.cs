@@ -35,6 +35,17 @@ public static class TouchInputBridge
     /// <summary>交互键本帧是否被按下（触屏通路）。</summary>
     public static bool InteractPressed { get; private set; }
 
+    /// <summary>
+    /// 盾键是否按住（触屏通路）。
+    ///
+    /// 【为什么是常驻布尔而不是一次性标记】
+    ///   格挡是持续状态：手指按下 → 一直举盾，抬起 → 放下。
+    ///   屏上按钮由 TouchHoldButton 用 IPointerDownHandler/IPointerUpHandler
+    ///   直接写这个值，既不经过虚拟手柄（否则移动时会冲刷边沿），
+    ///   也不走 onClick（onClick 只在抬起时触发一次，拿不到「按住」）。
+    /// </summary>
+    public static bool ShieldHeld { get; private set; }
+
     // 【为什么要记帧号而不是直接清】Unity 不保证脚本 Update 顺序。
     // 若玩家状态机的 Update 排在 EventSystem.Update() 之前，则本帧的点击
     // 是在玩家已经跑完之后才置位的；如果 LateUpdate 立刻清掉，玩家下一帧就再也读不到
@@ -62,6 +73,12 @@ public static class TouchInputBridge
         _interactSetFrame = Time.frameCount;
     }
 
+    /// <summary>盾键按下/抬起。TouchHoldButton 在 pointer down/up 时调用。</summary>
+    public static void SetShieldHeld(bool held)
+    {
+        ShieldHeld = held;
+    }
+
     /// <summary>
     /// 帧末清除一次性标记（由 TouchUIController 在 LateUpdate 调用）。
     ///
@@ -81,6 +98,7 @@ public static class TouchInputBridge
         Move = Vector2.zero;
         AttackPressed = false;
         InteractPressed = false;
+        ShieldHeld = false;
         _attackSetFrame = -1;
         _interactSetFrame = -1;
     }

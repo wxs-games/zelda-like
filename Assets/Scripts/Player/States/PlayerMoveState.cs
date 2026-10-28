@@ -10,6 +10,14 @@ public class PlayerMoveState : IPlayerState
 
     public void OnUpdate(PlayerController p)
     {
+        // 举盾中：立刻停下并回待机，进入站桩格挡。
+        if (p.IsBlocking)
+        {
+            p.playerrb.velocity = Vector2.zero;
+            p.ChangeState(PlayerIdleState.Instance);
+            return;
+        }
+
         // 与 PlayerIdleState 同一套分派：手游只有一个攻击键，按当前装备决定砍还是射
         if (GameInput.AttackPressed)
         {

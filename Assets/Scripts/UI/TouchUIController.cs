@@ -59,6 +59,9 @@ public class TouchUIController : MonoBehaviour
     [Tooltip("交互键（触屏，与 NPC 对话）。留空则不接线，交互只能靠键盘 F")]
     public GameObject interactButton;
 
+    [Tooltip("盾牌键（触屏，按住举盾）。输入由 TouchHoldButton 自己接管，这里只负责按解锁状态置灰")]
+    public GameObject shieldButton;
+
     [Tooltip("切换武器按钮灰置时的透明度")]
     [Range(0.1f, 1f)] public float lockedButtonAlpha = 0.35f;
 
@@ -219,6 +222,8 @@ public class TouchUIController : MonoBehaviour
 
         // 切换武器按钮的可用性跟随弓箭解锁状态，与总显隐门控相互独立
         RefreshChangeWeaponButton();
+        // 盾键同理：没捡到盾时置灰不可点
+        RefreshShieldButton();
 
         // 触屏按键统一改走 onClick，见 HookTouchButtons 的注释
         HookTouchButtons();
@@ -302,6 +307,45 @@ public class TouchUIController : MonoBehaviour
     }
 
     private static string Mark(bool pass) => pass ? "[OK] " : "[XX] ";
+
+    private bool _shieldButtonStateApplied;
+
+    /// <summary>
+    /// 盾键的解锁状态刷新：没捡到盾时置灰且不吃触摸。
+    ///
+    /// 为什么必须禁用 TouchHoldButton 而不是只调暗 Image：
+    ///   它靠 IPointerDown 直接写 TouchInputBridge，Image 变暗并不妨碍
+    ///   射线命中，玩家仍能「举盾」——只是举不起来、毫无反馈。
+    ///   这里连组件一起关掉，点在灰键上什么都不发生，与「没盾」语义一致。
+    /// </summary>
+    private void RefreshShieldButton()
+    {
+        if (shieldButton == null) return;
+
+        var stats = StatsManager.GetActive();
+        bool unlocked = stats != null && stats.hasShield;
+        if (_shieldButtonStateApplied == unlocked) return;
+        _shieldButtonStateApplied = unlocked;
+
+        var image = shieldButton.GetComponent<Image>();
+        if (image != null)
+        {
+            var c = image.color;
+            c.a = unlocked ? unlockedButtonAlpha : lockedButtonAlpha;
+            image.color = c;
+        }
+
+        var hold = shieldButton.GetComponent<TouchHoldButton>();
+        if (hold != null) hold.enabled = unlocked;
+
+        var labels = shieldButton.GetComponentsInChildren<UnityEngine.UI.Text>(true);
+        for (int i = 0; i < labels.Length; i++)
+        {
+            var lc = labels[i].color;
+            lc.a = unlocked ? 1f : lockedButtonAlpha;
+            labels[i].color = lc;
+        }
+    }
 
     /// <summary>
     /// 切换武器按钮（剑↔弓）的解锁状态刷新。

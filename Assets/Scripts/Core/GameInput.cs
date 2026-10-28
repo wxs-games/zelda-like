@@ -5,8 +5,9 @@ using UnityEngine.InputSystem;
 /// 输入抽象门面（动作层）：游戏逻辑只读「动作」（Move/Attack/Interact…），
 /// 不直接读物理按键。PC 键鼠、手柄、手机触屏各自把物理输入绑定到同一套动作，
 /// 加端/换端只需补绑定，不改任何游戏逻辑。
-/// 基于 Unity Input System（com.unity.inputsystem），键位与旧 InputManager 一致：
-/// WASD/方向键=移动，K=挥剑，J=射箭，F=交互，Q=切换武器，1/2/L=面板，Shift=冲刺，Esc=取消。
+/// 基于 Unity Input System（com.unity.inputsystem），键位（2026-10 调整后）：
+/// WASD/方向键=移动，J=挥剑，K=举盾（长按），U=射箭，F=交互，Q=切换武器，
+/// 1=属性面板，L=任务日志，Shift=冲刺，Esc=取消。
 /// 手柄/触屏绑定为 OnScreenStick/OnScreenButton 等虚拟控件预留（写入 Gamepad 控件位）。
 /// </summary>
 public static class GameInput
@@ -14,6 +15,7 @@ public static class GameInput
     private static readonly InputAction move;
     private static readonly InputAction sprint;
     private static readonly InputAction attack;
+    private static readonly InputAction shield;
     private static readonly InputAction shoot;
     private static readonly InputAction interact;
     private static readonly InputAction changeEquipment;
@@ -46,8 +48,10 @@ public static class GameInput
         // 攻击/交互的 <Gamepad>/buttonSouth / buttonNorth 绑定**保留**：
         // 它们服务的是实体手柄（Switch Pro / Xbox 手柄的 A/B 键）。
         // 触屏按键不再经由它们，而是由 TouchInputBridge 直接送标记（见 AttackPressed 属性）。
-        attack = NewButton("Attack", "<Keyboard>/k", "<Gamepad>/buttonSouth");
-        shoot = NewButton("Shoot", "<Keyboard>/j", "<Gamepad>/buttonWest");
+        attack = NewButton("Attack", "<Keyboard>/j", "<Gamepad>/buttonSouth");
+        // 盾：按住才举，松开即放下。手柄走左扳机（LB/LT 是格挡的通用位）
+        shield = NewButton("Shield", "<Keyboard>/k", "<Gamepad>/leftTrigger");
+        shoot = NewButton("Shoot", "<Keyboard>/u", "<Gamepad>/buttonWest");
         interact = NewButton("Interact", "<Keyboard>/f", "<Gamepad>/buttonNorth");
         changeEquipment = NewButton("ChangeEquipment", "<Keyboard>/q", "<Gamepad>/rightShoulder");
         toggleStats = NewButton("ToggleStats", "<Keyboard>/1");
@@ -57,6 +61,7 @@ public static class GameInput
         move.Enable();
         sprint.Enable();
         attack.Enable();
+        shield.Enable();
         shoot.Enable();
         interact.Enable();
         changeEquipment.Enable();
@@ -95,11 +100,21 @@ public static class GameInput
     public static bool SprintHeld => sprint.IsPressed();
 
     /// <summary>
-    /// 本帧按下挥剑。合并「键盘 K / 实体手柄 buttonSouth」与「触屏攻击键 onClick」两条通路。
+    /// 本帧按下挥剑。合并「键盘 J / 实体手柄 buttonSouth」与「触屏攻击键 onClick」两条通路。
     /// </summary>
     public static bool AttackPressed => attack.WasPressedThisFrame() || TouchInputBridge.AttackPressed;
 
-    /// <summary>本帧按下射箭（PC J 键 / 手柄 buttonWest，触屏无独立射箭键——攻击键按装备分派）。</summary>
+    /// <summary>
+    /// 盾牌键是否**按住**（不是本帧按下）。
+    ///
+    /// 【为什么盾要读按住而不是按下】
+    ///   格挡是持续动作：按住一直举着，松开立刻放下。用 WasPressedThisFrame
+    ///   只能拿到按下那一帧，会出现「点一下盾牌闪一下就没了」。
+    ///   合并「键盘 K / 手柄左扳机」与「触屏盾键按住」两条通路。
+    /// </summary>
+    public static bool ShieldHeld => shield.IsPressed() || TouchInputBridge.ShieldHeld;
+
+    /// <summary>本帧按下射箭（PC U 键 / 手柄 buttonWest，触屏无独立射箭键——攻击键按装备分派）。</summary>
     public static bool ShootPressed => shoot.WasPressedThisFrame();
 
     /// <summary>
